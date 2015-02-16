@@ -60,7 +60,8 @@ class App
             ];
             return 'error';
         } else {
-            $this->makeOrder($checkoutForm->getData()->getData());
+            $formData = $checkoutForm->getData()->getData();
+            $this->makeOrder($data, $paymentMethod->extractPaymentInfo($formData));
             $this->data = ['successMessage' => 'Good' . $paymentMethod->getCode()];
             return 'success';
         }

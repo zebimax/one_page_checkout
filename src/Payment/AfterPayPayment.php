@@ -51,6 +51,11 @@ class AfterPayPayment extends AbstractPaymentMethod
 
     }
 
+    public function extractPaymentInfo(array $data)
+    {
+        return [];
+    }
+
     public function getCode()
     {
         return $this->code;

@@ -40,6 +40,18 @@ class IdealPayment extends AbstractPaymentMethod
 
     }
 
+    public function extractPaymentInfo(array $data)
+    {
+        if(isset($data['ideal[banks]'])) {
+            return [
+                'payment_info' => [
+                    'bank' => $data['ideal[banks]']
+                ]
+            ];
+        }
+        return [];
+    }
+
     public function getCode()
     {
         return $this->code;
