@@ -1,0 +1,7 @@
+Error PAGE
+<?php
+/** @var App $this */
+echo $checkoutForm;
+if(isset($errors[0])): ?>
+    <div id="errors"><?php echo implode('<br />', $errors)?></div>
+<?php endif?>
