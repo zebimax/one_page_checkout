@@ -14,6 +14,8 @@ abstract class AbstractPaymentMethod implements PaymentMethodInterface
 {
     const PAYMENT_URL = '/payment';
     protected $code;
+    protected $transactionErrors = [];
+    protected $transactionInfo = [];
 
     abstract public function addOwnFieldsToCheckoutForm(CheckoutForm $checkoutForm);
     abstract public function process($orderId, array $data);
@@ -21,6 +23,22 @@ abstract class AbstractPaymentMethod implements PaymentMethodInterface
     public function isCanProcess(CheckoutForm $checkoutForm)
     {
         return $checkoutForm->getFormDataValue('payment_method') === $this->code;
+    }
+
+    /**
+     * @return array
+     */
+    public function getTransactionInfo()
+    {
+        return $this->transactionInfo;
+    }
+
+    /**
+     * @return array
+     */
+    public function getTransactionErrors()
+    {
+        return $this->transactionErrors;
     }
 
     protected function getPaymentDescription(array $data)

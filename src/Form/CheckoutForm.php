@@ -11,6 +11,7 @@ use Form\Component\TextComponent;
 use Form\Component\Text\Label;
 use Form\Data\AbstractFormData;
 use Form\Validators\Interfaces\ValidatorInterface;
+use Payment\AbstractPaymentMethod;
 use Payment\Interfaces\ActivatableValidatorsInterface;
 use Payment\PaymentMethodInterface;
 
@@ -77,13 +78,17 @@ class CheckoutForm extends AbstractFrom
     public function setPaymentMethods(array $paymentMethods)
     {
         foreach ($paymentMethods as $paymentMethod) {
-            if ($paymentMethod instanceof PaymentMethodInterface) {
+            if ($paymentMethod instanceof AbstractPaymentMethod) {
                 $this->paymentMethods[$paymentMethod->getCode()] = $paymentMethod;
             }
         }
         return $this;
     }
 
+    /**
+     * @return bool|AbstractPaymentMethod
+     * @throws \Exception
+     */
     public function selectPaymentMethod()
     {
         foreach ($this->paymentMethods as $paymentMethod) {

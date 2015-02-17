@@ -21,10 +21,10 @@ $app = new App(
     $config,
     MysqlDb::getInstance($config->get('mysql'))
 );
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 switch (true) {
-    case (isset($_POST['success']) && $_POST['success']) :
-        $view = VIEW_APP_DIR . 'success.phtml';
-        $app->success();
+    case ($uri == '/payment' && $_GET['order_id']) && $_GET['project_id']:
+        $view = VIEW_APP_DIR . $app->success($_GET['order_id'], $_GET['project_id']) . '.phtml';
         break;
     case (isset($_POST['checkout']) && $_POST['checkout']) :
         $view = VIEW_APP_DIR . $app->checkout($_POST) . '.phtml';

@@ -18,13 +18,17 @@ use Form\Validators\CallableValidationValidator;
 use Form\ValidatorsConfigurableInterface;
 use Payment\Api\GingerApi;
 use Payment\Interfaces\ActivatableValidatorsInterface;
+use Payment\Interfaces\ReturnRedirectUrlInterface;
+use Payment\Traits\ReturnRedirectUrlTrait;
 use Payment\Traits\ValidatorsConfigurableTrait;
 
 class IdealPayment extends AbstractPaymentMethod
     implements ValidatorsConfigurableInterface,
-    ActivatableValidatorsInterface
+    ActivatableValidatorsInterface,
+    ReturnRedirectUrlInterface
 {
     use ValidatorsConfigurableTrait;
+    use ReturnRedirectUrlTrait;
     private $api;
     private $sharedComponents = [];
     private $gingerIssuers = [];
@@ -37,13 +41,22 @@ class IdealPayment extends AbstractPaymentMethod
 
     public function process($orderId, array $data)
     {
-        $this->api->gingerCreateIdealOrder(
+        $gingerCreateIdealOrder = $this->api->gingerCreateIdealOrder(
             $orderId,
             $data['total'],
             $data['issuer_id'],
             $this->getReturnUrl(),
             $this->getPaymentDescription($data)
         );
+        if (!is_array($gingerCreateIdealOrder) || array_key_exists('error', $gingerCreateIdealOrder)) {
+            $this->transactionErrors[] = 'Selected payment method is not available now.';
+            return false;
+        }
+        else {
+            $this->transactionInfo = ['order_id' => $orderId, 'payment_order_id' => $gingerCreateIdealOrder['id']];
+            $this->redirectUrl = $gingerCreateIdealOrder['transactions'][0]['payment_url'];
+        }
+        return true;
     }
 
     public function extractPaymentInfo(array $data)

@@ -1,0 +1,11 @@
+DirectoryIndex indexp.php
+
+<IfModule mod_rewrite.c>
+
+    Options +FollowSymLinks
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule .? - [L]
+    RewriteRule .? index.php [L]
+
+</IfModule>

@@ -5,6 +5,9 @@ use Form\Data\FormData;
 use Form\Validators\Interfaces\ValidatorInterface;
 use Model\Model;
 use Model\Orders;
+use Model\PaymentOrderInfo;
+use Payment\AbstractPaymentMethod;
+use Payment\Interfaces\ReturnRedirectUrlInterface;
 
 /**
  * Created by PhpStorm.
@@ -36,9 +39,20 @@ class App
         ];
     }
 
-    public function success()
+    public function success($paymentOrderId, $projectId)
     {
-        
+        $paymentOrderInfo = $this->getOrdersInfoModel();
+        $updateStatus = $paymentOrderInfo
+            ->updateStatusByPaymentOrderId($paymentOrderId, PaymentOrderInfo::STATUS_SUCCESS);
+        if ($updateStatus == PaymentOrderInfo::STATUS_SUCCESS) {
+            $view = 'success';
+            $this->data['successMessage'] = 'Success payment: order_id ' . $paymentOrderId;
+            $this->saveOrder($paymentOrderId);
+        } else {
+            $view = 'error';
+            $this->data['successMessage'] = 'Can\'t save success order ' . $paymentOrderId;
+        }
+        return $view;
     }
 
     public function error()
@@ -69,9 +83,23 @@ class App
                     'errors' => ['Can not create order']
                 ];
             } else {
-                $paymentMethod->process($orderId, array_merge($paymentData, $data));
-                $this->data = ['successMessage' => 'Good' . $paymentMethod->getCode()];
-                $view = 'success';
+                $result = $paymentMethod->process($orderId, array_merge($paymentData, $data));
+                if (!$result) {
+                    $this->data['errors'] = $paymentMethod->getTransactionErrors();
+                    $view = 'error';
+                } else {
+                    $transactionInfo = $paymentMethod->getTransactionInfo();
+                    if (!$this->setPaymentOrder($transactionInfo['order_id'], $transactionInfo['payment_order_id'])) {
+                        $this->data['errors'] = ['Can not update order'];
+                        $view = 'error';
+                    } else {
+                        if ($paymentMethod instanceof ReturnRedirectUrlInterface) {
+                            header('location:' . $paymentMethod->returnRedirectUrl());
+                        }
+                        $this->data = ['successMessage' => 'Good' . $paymentMethod->getCode()];
+                        $view = 'success';
+                    }
+                }
             }
         }
         if ($view == 'error') {
@@ -116,11 +144,14 @@ class App
         return $countriesModel->tableSelect(['value' => 'iso3_code', 'name']);
     }
 
+    /**
+     * @return AbstractPaymentMethod[]
+     */
     private function getPaymentMethods()
     {
         $paymentMethods = [];
         foreach ($this->getArrayFromConfig('available_payment_methods') as $paymentMethod) {
-            if ($paymentMethod instanceof \Payment\PaymentMethodInterface) {
+            if ($paymentMethod instanceof AbstractPaymentMethod) {
                 $paymentMethods[] = $paymentMethod;
             }
         }
@@ -132,6 +163,12 @@ class App
         /** @var Orders $ordersModel*/
         $ordersModel = new Orders($this->db, Model::ORDERS_TABLE);
         return $ordersModel->makeOrder($orderData, $paymentData);
+    }
+
+    private function setPaymentOrder($orderId, $paymentOrderId)
+    {
+        $paymentOrderInfo = $this->getOrdersInfoModel();
+        return $paymentOrderInfo->setPaymentOrder($orderId, $paymentOrderId);
     }
 
     private function getCheckoutFormValidators()
@@ -164,4 +201,17 @@ class App
      {
          return $quantity * $price;
      }
+
+    /**
+     * @return PaymentOrderInfo
+     */
+    private function getOrdersInfoModel()
+    {
+        return new PaymentOrderInfo($this->db);
+    }
+
+    private function saveOrder($paymentOrderId)
+    {
+
+    }
 }
