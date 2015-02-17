@@ -58,4 +58,43 @@ class PaymentOrderInfo extends Model
         return $this->db->getConnection()->affected_rows ? $status : false;
     }
 
+    public function getPaymentByPaymentOrderId($paymentOrderId)
+    {
+        $methodRows = $this->tableSelect(
+            ['payment' => 'pm.code'],
+            [sprintf('%s pm on pm.id = %s.payment_method_id', self::PAYMENT_METHODS_TABLE, $this->table)],
+            [sprintf('%s.payment_order_id = "%s"', $this->table, $this->escape($paymentOrderId))],
+            ['LIMIT 1']
+        );
+        if (isset($methodRows[0]['payment'])) {
+            return $methodRows[0]['payment'];
+        } else {
+            return false;
+        }
+    }
+
+    public function getInfo($paymentOrderId)
+    {
+        return $this->tableSelect(
+            [
+                'payment_data' => $this->table . '.data',
+                'payment_code' => 'pm.code',
+                'payment_name' => 'pm.name',
+                'first_name', 'last_name',
+                'email', 'phone',
+                'profession', 'post_code',
+                'house_number', 'street',
+                'location', 'quantity',
+                'country_code' => 'c.iso1_code'
+            ],
+            [
+                sprintf('%s pm on pm.id = %s.payment_method_id', self::PAYMENT_METHODS_TABLE, $this->table),
+                sprintf('%s oi on oi.order_id = %s.order_id', self::ORDER_INFO_TABLE, $this->table),
+                sprintf('%s c on c.id = %s.country_id', self::COUNTRIES_TABLE, 'oi')
+            ],
+            [sprintf('%s.payment_order_id = "%s"', $this->table, $this->escape($paymentOrderId))],
+            ['LIMIT 1']
+        );
+    }
+
 }

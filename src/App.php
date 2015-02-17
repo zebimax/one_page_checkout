@@ -22,6 +22,7 @@ class App
     private $data = [];
     private $config;
     private $db;
+    private $paymentOrderInfoModel;
 
     public function __construct(ConfigInterface $configInterface, MysqlDb $db)
     {
@@ -39,18 +40,27 @@ class App
         ];
     }
 
-    public function success($paymentOrderId, $projectId)
+    public function success($paymentOrderId)
     {
-        $paymentOrderInfo = $this->getOrdersInfoModel();
-        $updateStatus = $paymentOrderInfo
-            ->updateStatusByPaymentOrderId($paymentOrderId, PaymentOrderInfo::STATUS_SUCCESS);
-        if ($updateStatus == PaymentOrderInfo::STATUS_SUCCESS) {
-            $view = 'success';
-            $this->data['successMessage'] = 'Success payment: order_id ' . $paymentOrderId;
-            $this->saveOrder($paymentOrderId);
-        } else {
-            $view = 'error';
-            $this->data['successMessage'] = 'Can\'t save success order ' . $paymentOrderId;
+        $view = 'error';
+        $this->data['errors'] = 'Order is invalid';
+        $paymentOrderInfo = $this->getPaymentOrdersInfoModel();
+        $paymentCode = $paymentOrderInfo->getPaymentByPaymentOrderId($paymentOrderId);
+        if ($paymentCode) {
+            /** @var AbstractPaymentMethod $paymentMethod */
+            $paymentMethod = $this->getPaymentMethod($paymentCode);
+            if ($paymentMethod && $paymentMethod->checkSuccessOrder($paymentOrderId)) {
+                $updateStatus = $paymentOrderInfo
+                    ->updateStatusByPaymentOrderId($paymentOrderId, PaymentOrderInfo::STATUS_SUCCESS);
+                if ($updateStatus == PaymentOrderInfo::STATUS_SUCCESS||1) {
+                    $view = 'success';
+                    $this->data['successMessage'] = 'Success payment: order_id ' . $paymentOrderId;
+                    $this->saveOrder($paymentOrderId);
+                }
+            }
+        }
+        if ($view == 'error') {
+            $this->index();
         }
         return $view;
     }
@@ -89,12 +99,14 @@ class App
                     $view = 'error';
                 } else {
                     $transactionInfo = $paymentMethod->getTransactionInfo();
-                    if (!$this->setPaymentOrder($transactionInfo['order_id'], $transactionInfo['payment_order_id'])) {
+                    if (!$this->setPaymentOrder($transactionInfo['order_id'], $transactionInfo['payment_order_id'])) { //todo move logic to paymentMethod
                         $this->data['errors'] = ['Can not update order'];
                         $view = 'error';
                     } else {
                         if ($paymentMethod instanceof ReturnRedirectUrlInterface) {
                             header('location:' . $paymentMethod->returnRedirectUrl());
+                        } else {
+                            header('location:http://' . PRODUCT_HOST . '/success?order_id=' . $transactionInfo['payment_order_id']);
                         }
                         $this->data = ['successMessage' => 'Good' . $paymentMethod->getCode()];
                         $view = 'success';
@@ -134,14 +146,14 @@ class App
         $configOptions = $this->config->get('checkout_form_options');
         return array_merge($configOptions, [
             ['name' => 'label', 'params' => ['labelFor' => CheckoutForm::COUNTRY, 'text' => 'Select countries']],
-            ['name' => CheckoutForm::COUNTRY, 'params' => [Select::SELECT_OPTIONS => $this->getCountries(), Select::SELECT_SELECTED => 'NLD']],
+            ['name' => CheckoutForm::COUNTRY, 'params' => [Select::SELECT_OPTIONS => $this->getCountries(), Select::SELECT_SELECTED => 'NL']],
         ]);
     }
 
     private function getCountries()
     {
         $countriesModel = new Model($this->db, Model::COUNTRIES_TABLE);
-        return $countriesModel->tableSelect(['value' => 'iso3_code', 'name']);
+        return $countriesModel->tableSelect(['value' => 'iso1_code', 'name']);
     }
 
     /**
@@ -158,6 +170,23 @@ class App
         return $paymentMethods;
     }
 
+    /**
+     * @param $code
+     * @return AbstractPaymentMethod|null
+     */
+    private function getPaymentMethod($code)
+    {
+        $paymentMethod = null;
+        $paymentsFromConfigs = $this->config->get('available_payment_methods');
+        if (
+            isset($paymentsFromConfigs[$code]) &&
+            is_callable($paymentsFromConfigs[$code])
+        ) {
+            $paymentMethod = $paymentsFromConfigs[$code]($this->config);
+        }
+        return $paymentMethod instanceof AbstractPaymentMethod ? $paymentMethod : null;
+    }
+
     private function makeOrder(array $orderData, array $paymentData)
     {
         /** @var Orders $ordersModel*/
@@ -167,7 +196,7 @@ class App
 
     private function setPaymentOrder($orderId, $paymentOrderId)
     {
-        $paymentOrderInfo = $this->getOrdersInfoModel();
+        $paymentOrderInfo = $this->getPaymentOrdersInfoModel();
         return $paymentOrderInfo->setPaymentOrder($orderId, $paymentOrderId);
     }
 
@@ -205,13 +234,16 @@ class App
     /**
      * @return PaymentOrderInfo
      */
-    private function getOrdersInfoModel()
+    private function getPaymentOrdersInfoModel()
     {
-        return new PaymentOrderInfo($this->db);
+        if (!$this->paymentOrderInfoModel) {
+            $this->paymentOrderInfoModel = new PaymentOrderInfo($this->db);
+        }
+        return $this->paymentOrderInfoModel;
     }
 
     private function saveOrder($paymentOrderId)
     {
-
+        $info = $this->getPaymentOrdersInfoModel()->getInfo($paymentOrderId);
     }
 }

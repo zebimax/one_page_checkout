@@ -7,7 +7,7 @@
  */
 define('APP_DIR', dirname(__DIR__ . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 define('VIEW_APP_DIR', APP_DIR . 'views' . DIRECTORY_SEPARATOR);
-define('PRODUCT_HOST', 'vitamingummiesbestelpagina.nl');
+define('PRODUCT_HOST', 'dod-product.local');
 define('PRODUCT_NAME', 'vitamine gummies');
 
 $loader = require_once APP_DIR .'/vendor/autoload.php';
@@ -23,8 +23,8 @@ $app = new App(
 );
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 switch (true) {
-    case ($uri == '/payment' && $_GET['order_id']) && $_GET['project_id']:
-        $view = VIEW_APP_DIR . $app->success($_GET['order_id'], $_GET['project_id']) . '.phtml';
+    case ($uri == '/success' && isset($_GET['order_id'])):
+        $view = VIEW_APP_DIR . $app->success($_GET['order_id']) . '.phtml';
         break;
     case (isset($_POST['checkout']) && $_POST['checkout']) :
         $view = VIEW_APP_DIR . $app->checkout($_POST) . '.phtml';

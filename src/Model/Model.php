@@ -47,17 +47,18 @@ class Model
         return false;
     }
 
-    public function tableSelect(array $fields = [], array $join = [], array $where = [])
+    public function tableSelect(array $fields = [], array $join = [], array $where = [], array $params = [])
     {
         if (!$this->table) {
             throw new \Exception('table is not set!');
         }
         return $this->getRows(sprintf(
-            'SELECT %s %s FROM %s %s',
+            'SELECT %s FROM %s %s  %s %s',
             $this->makeFields($fields),
-            $this->makeJoins($join),
             $this->table,
-            $this->makeWhere($where)
+            $this->makeJoins($join),
+            $this->makeWhere($where),
+            implode(' ', $params)
 
         ));
     }
@@ -132,9 +133,9 @@ class Model
     {
         $whereSql = '';
         foreach ($where as $condition) {
-            $whereSql .= "AND {$condition}";
+            $whereSql .= "AND {$condition} ";
         }
-        return $whereSql ? ' WHERE' . ltrim($whereSql, 'AND') : '';
+        return $whereSql ? 'WHERE ' . ltrim($whereSql, ' AND') : '';
     }
 
     protected function transaction(array $sqls)

@@ -12,7 +12,7 @@ use Form\CheckoutForm;
 
 abstract class AbstractPaymentMethod implements PaymentMethodInterface
 {
-    const PAYMENT_URL = '/payment';
+    const PAYMENT_URL = '/success';
     protected $code;
     protected $transactionErrors = [];
     protected $transactionInfo = [];
@@ -20,6 +20,7 @@ abstract class AbstractPaymentMethod implements PaymentMethodInterface
     abstract public function addOwnFieldsToCheckoutForm(CheckoutForm $checkoutForm);
     abstract public function process($orderId, array $data);
     abstract public function extractPaymentInfo(array $data);
+    abstract function checkSuccessOrder($paymentOrderId);
     public function isCanProcess(CheckoutForm $checkoutForm)
     {
         return $checkoutForm->getFormDataValue('payment_method') === $this->code;

@@ -10,6 +10,7 @@ namespace Payment\Api;
 
 class GingerApi
 {
+    const  ORDER_STATUS_COMPLETED = 'completed';
     public $debug_mode;
     public $log_to;
 
@@ -162,9 +163,8 @@ class GingerApi
     public function getOrderStatus($order_id)
     {
         $order = $this->performApiCall( "orders/" . $order_id . "/" );
-
         if ( !is_array( $order ) or array_key_exists( 'error', $order ) ) {
-            return 'error';
+            return false;
         }
         else {
             return $order['status'];

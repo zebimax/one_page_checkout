@@ -29,7 +29,7 @@ class IdealPayment extends AbstractPaymentMethod
 {
     use ValidatorsConfigurableTrait;
     use ReturnRedirectUrlTrait;
-    private $api;
+    protected $api;
     private $sharedComponents = [];
     private $gingerIssuers = [];
 
@@ -37,6 +37,12 @@ class IdealPayment extends AbstractPaymentMethod
     {
         $this->api = $api;
         $this->code = 'ideal';
+    }
+
+    public function checkSuccessOrder($paymentOrderId)
+    {
+        $orderStatus = $this->api->getOrderStatus($paymentOrderId);
+        return $orderStatus == GingerApi::ORDER_STATUS_COMPLETED;
     }
 
     public function process($orderId, array $data)

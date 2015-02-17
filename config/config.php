@@ -7,6 +7,7 @@
  */
 use Form\Validators\CallableValidationValidator;
 use Payment\AfterPayPayment;
+use Payment\Api\Afterpay;
 use Payment\Api\GingerApi;
 use Payment\IdealPayment;
 error_reporting(E_ALL);
@@ -14,6 +15,7 @@ ini_set('display_errors', true);
 return [
     'secret_success_key' => 123,
     'ginger_api_key' => '64c0b3be0b8d4c23b44140a3a8b5234b',
+    'afterpay_api_url' => 'https://www.acceptgirodienst.nl/services/interface/?wsdl',
     'mysql' => [
         'host' => 'localhost',
         'port' => 3601,
@@ -50,7 +52,7 @@ return [
         ['name' => 'location', 'params' => ['value' => 'test']],
         ['name' => 'br_tag'],
         ['name' => 'label', 'params' => ['labelFor' => 'payment_method', 'text' => 'Payment']],
-        ['name' => 'payment_method', 'params' => ['selected' => 'ideal', 'options' => [['value' => 'ideal', 'name' => 'ideal'], ['value' => 'afterpay', 'name' => 'afterpay']]]],
+        ['name' => 'payment_method', 'params' => ['selected' => 'afterpay', 'options' => [['value' => 'ideal', 'name' => 'iDEAL'], ['value' => 'afterpay', 'name' => 'afterpay']]]],
         ['name' => 'br_tag'],
         ['name' => 'label', 'params' => ['labelFor' => 'quantity', 'text' => 'Product quantity']],
         ['name' => 'quantity', 'params' => ['value' => '1']],
@@ -62,7 +64,7 @@ return [
             return new IdealPayment(new GingerApi($configInterface->get('ginger_api_key')));
         },
         'afterpay' => function (ConfigInterface $configInterface) {
-            return new AfterPayPayment();
+            return new AfterPayPayment(new AfterPay($configInterface->get('afterpay_api_url')));
         }
     ],
     'checkout_form_validators' => [
@@ -161,7 +163,7 @@ return [
                 'country',
                 'Not valid country',
                 function($value) {
-                    return preg_match('/^[A-Za-z]{3}$/', $value);
+                    return preg_match('/^[A-Za-z]{2}$/', $value);
                 }
             );
         },
