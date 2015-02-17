@@ -6,10 +6,10 @@
  * Time: 17:57
  */
 
-namespace Form\Validators\Traits;
+namespace Application\Traits;
 
 
-trait NamedValidatorTrait
+trait NamedTrait
 {
     protected $name;
 

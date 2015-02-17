@@ -6,10 +6,10 @@
  * Time: 17:50
  */
 
-namespace Form\Validators\Traits;
+namespace Application\Traits;
 
 
-trait ErrorMessageValidatorTrait
+trait ErrorMessageTrait
 {
     protected $error = '';
 

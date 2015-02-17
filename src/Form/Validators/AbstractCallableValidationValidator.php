@@ -9,14 +9,14 @@
 namespace Form\Validators;
 
 
+use Application\Interfaces\ErrorMessageInterface;
+use Application\Interfaces\NamedInterface;
 use Form\Validators\Interfaces\CallableValidationValidatorInterface;
-use Form\Validators\Interfaces\ErrorMessageValidatorInterface;
-use Form\Validators\Interfaces\NamedValidatorInterface;
 
 abstract class AbstractCallableValidationValidator
     implements CallableValidationValidatorInterface,
-    ErrorMessageValidatorInterface,
-    NamedValidatorInterface
+    ErrorMessageInterface,
+    NamedInterface
 {
     abstract public function setValidation(callable $validation);
     abstract public function getError();

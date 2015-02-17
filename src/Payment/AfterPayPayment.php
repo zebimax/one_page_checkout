@@ -46,7 +46,7 @@ class AfterPayPayment extends AbstractPaymentMethod
         });
     }
 
-    public function process(CheckoutForm $checkoutForm)
+    public function process($orderId, array $data)
     {
 
     }

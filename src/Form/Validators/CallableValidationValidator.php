@@ -9,15 +9,15 @@
 namespace Form\Validators;
 
 
+use Application\Traits\ErrorMessageTrait;
+use Application\Traits\NamedTrait;
 use Form\Validators\Traits\CallableValidationTrait;
-use Form\Validators\Traits\ErrorMessageValidatorTrait;
-use Form\Validators\Traits\NamedValidatorTrait;
 
 class CallableValidationValidator extends AbstractCallableValidationValidator
 {
     use CallableValidationTrait;
-    use ErrorMessageValidatorTrait;
-    use NamedValidatorTrait;
+    use ErrorMessageTrait;
+    use NamedTrait;
 
     public function __construct($name = null, $error = null, callable $validation = null)
     {

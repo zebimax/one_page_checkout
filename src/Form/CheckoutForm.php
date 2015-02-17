@@ -11,6 +11,7 @@ use Form\Component\TextComponent;
 use Form\Component\Text\Label;
 use Form\Data\AbstractFormData;
 use Form\Validators\Interfaces\ValidatorInterface;
+use Payment\Interfaces\ActivatableValidatorsInterface;
 use Payment\PaymentMethodInterface;
 
 class CheckoutForm extends AbstractFrom
@@ -87,6 +88,16 @@ class CheckoutForm extends AbstractFrom
     {
         foreach ($this->paymentMethods as $paymentMethod) {
             if ($paymentMethod->isCanProcess($this)) {
+                if (
+                    $paymentMethod instanceof ActivatableValidatorsInterface &&
+                    $paymentMethod instanceof ValidatorsConfigurableInterface
+                ) {
+                    $paymentMethod->activateValidators();
+                    foreach ($paymentMethod->getValidators() as $paymentMethodValidator) {
+                        $this->data->addValidator($paymentMethodValidator);
+                    }
+
+                }
                 return $paymentMethod;
             }
         }
@@ -116,14 +127,6 @@ class CheckoutForm extends AbstractFrom
         foreach ($this->validators as $validator) {
             $this->data->addValidator($validator);
         }
-        foreach ($this->paymentMethods as $paymentMethod) {
-            if ($paymentMethod instanceof ValidatorsConfigurableInterface) {
-                foreach ($paymentMethod->getValidators() as $paymentMethodValidator) {
-                    $this->data->addValidator($paymentMethodValidator);
-                }
-
-            }
-        }
         return $this;
     }
 
@@ -135,6 +138,11 @@ class CheckoutForm extends AbstractFrom
     {
         $this->validators = $validators;
         return $this;
+    }
+
+    public function getQuantity()
+    {
+        return (int)$this->data->getRawValue('quantity');
     }
 
     protected function createComponent($fieldName, array $params = array())

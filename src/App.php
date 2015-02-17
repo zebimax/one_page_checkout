@@ -56,15 +56,28 @@ class App
         if (($paymentMethod = $checkoutForm->selectPaymentMethod()) === false || !$checkoutForm->isValid()) {
             $this->data = [
                 'errors' => $checkoutForm->getValidationErrors(),
-                'checkoutForm' => $checkoutForm->make()
             ];
-            return 'error';
+            $view = 'error';
         } else {
             $formData = $checkoutForm->getData()->getData();
-            $this->makeOrder($data, $paymentMethod->extractPaymentInfo($formData));
-            $this->data = ['successMessage' => 'Good' . $paymentMethod->getCode()];
-            return 'success';
+            $paymentData = $paymentMethod->extractPaymentInfo($formData);
+            $paymentData['total'] = $this->calculateTotal($checkoutForm->getQuantity(), 999);
+            $orderId = $this->makeOrder($data, $paymentData);
+            if (!$orderId) {
+                $view = 'error';
+                $this->data = [
+                    'errors' => ['Can not create order']
+                ];
+            } else {
+                $paymentMethod->process($orderId, array_merge($paymentData, $data));
+                $this->data = ['successMessage' => 'Good' . $paymentMethod->getCode()];
+                $view = 'success';
+            }
         }
+        if ($view == 'error') {
+            $this->data['checkoutForm'] = $checkoutForm->make();
+        }
+        return $view;
     }
 
     /**
@@ -114,11 +127,11 @@ class App
         return $paymentMethods;
     }
 
-    private function makeOrder(array $orderData)
+    private function makeOrder(array $orderData, array $paymentData)
     {
         /** @var Orders $ordersModel*/
         $ordersModel = new Orders($this->db, Model::ORDERS_TABLE);
-        return $ordersModel->makeOrder($orderData);
+        return $ordersModel->makeOrder($orderData, $paymentData);
     }
 
     private function getCheckoutFormValidators()
@@ -147,6 +160,8 @@ class App
         }
         return $arrayFromConfig;
     }
-
-
+     private function calculateTotal($quantity, $price)
+     {
+         return $quantity * $price;
+     }
 }

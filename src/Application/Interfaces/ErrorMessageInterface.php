@@ -6,10 +6,10 @@
  * Time: 17:50
  */
 
-namespace Form\Validators\Interfaces;
+namespace Application\Interfaces;
 
 
-interface ErrorMessageValidatorInterface
+interface ErrorMessageInterface
 {
     function getError();
 }

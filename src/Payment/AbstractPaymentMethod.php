@@ -12,13 +12,36 @@ use Form\CheckoutForm;
 
 abstract class AbstractPaymentMethod implements PaymentMethodInterface
 {
+    const PAYMENT_URL = '/payment';
     protected $code;
 
     abstract public function addOwnFieldsToCheckoutForm(CheckoutForm $checkoutForm);
-    abstract public function process(CheckoutForm $checkoutForm);
+    abstract public function process($orderId, array $data);
     abstract public function extractPaymentInfo(array $data);
     public function isCanProcess(CheckoutForm $checkoutForm)
     {
         return $checkoutForm->getFormDataValue('payment_method') === $this->code;
+    }
+
+    protected function getPaymentDescription(array $data)
+    {
+        return sprintf(
+            '%s payment from %s for %s %s, email: %s of % product, quantity: %s',
+            $this->getCode(),
+            PRODUCT_HOST,
+            $data['first_name'],
+            $data['last_name'],
+            $data['email'],
+            PRODUCT_NAME,
+            $data['quantity']
+        );
+    }
+
+    /**
+     * @return string
+     */
+    protected function getReturnUrl()
+    {
+        return PRODUCT_HOST . self::PAYMENT_URL;
     }
 }

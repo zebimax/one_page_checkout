@@ -7,6 +7,9 @@
  */
 define('APP_DIR', dirname(__DIR__ . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 define('VIEW_APP_DIR', APP_DIR . 'views' . DIRECTORY_SEPARATOR);
+define('PRODUCT_HOST', 'vitamingummiesbestelpagina.nl');
+define('PRODUCT_NAME', 'vitamine gummies');
+
 $loader = require_once APP_DIR .'/vendor/autoload.php';
 
 // register classes with namespaces

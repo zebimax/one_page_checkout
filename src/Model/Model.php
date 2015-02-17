@@ -16,7 +16,7 @@ class Model
     private $tables = [];
     const ORDERS_TABLE = 'orders';
     const ORDER_INFO_TABLE = 'order_info';
-    const PAYMENT_METHODS_TABLE = 'orders';
+    const PAYMENT_METHODS_TABLE = 'payment_methods';
     const PAYMENT_ORDER_TABLE = 'payment_order_info';
     const COUNTRIES_TABLE = 'countries';
 
@@ -178,20 +178,20 @@ class Model
     protected function getCountryIdByCode($code)
     {
         $row = $this->getRow(sprintf(
-                'SELECT id FROM %s WHERE iso3_code = "%s"'),
+            'SELECT id FROM %s WHERE iso3_code = "%s"',
             Model::COUNTRIES_TABLE,
             $this->escape($code)
-        );
+        ));
         return $row ? $row['id'] : false;
     }
 
     protected function getPaymentMethodIdByCode($code)
     {
         $row = $this->getRow(sprintf(
-                'SELECT id FROM %s WHERE code = "%s"'),
+            'SELECT id FROM %s WHERE code = "%s"',
             Model::PAYMENT_METHODS_TABLE,
             $this->escape($code)
-        );
+        ));
         return $row ? $row['id'] : false;
     }
 }

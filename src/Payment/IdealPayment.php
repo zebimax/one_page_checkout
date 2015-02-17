@@ -35,18 +35,23 @@ class IdealPayment extends AbstractPaymentMethod
         $this->code = 'ideal';
     }
 
-    public function process(CheckoutForm $checkoutForm)
+    public function process($orderId, array $data)
     {
-
+        $this->api->gingerCreateIdealOrder(
+            $orderId,
+            $data['total'],
+            $data['issuer_id'],
+            $this->getReturnUrl(),
+            $this->getPaymentDescription($data)
+        );
     }
 
     public function extractPaymentInfo(array $data)
     {
-        if(isset($data['ideal[banks]'])) {
+        if(isset($data['ideal']['banks'])) {
             return [
-                'payment_info' => [
-                    'bank' => $data['ideal[banks]']
-                ]
+                'issuer_id' => $data['ideal']['banks'],
+                'total' => isset($data['total']) ? $data['total'] : 0
             ];
         }
         return [];
@@ -61,10 +66,10 @@ class IdealPayment extends AbstractPaymentMethod
     {
         $this->validators = [
             new CallableValidationValidator(
-                'ideal[banks]',
+                'ideal',
                 'not valid ideal bank',
                 function ($value) {
-                    return in_array($value, $this->getGingerIssuers());
+                    return (isset($value['banks'])) && isset($this->getGingerIssuers()[$value['banks']]);
                 }
             )
         ];
@@ -124,8 +129,16 @@ class IdealPayment extends AbstractPaymentMethod
     private function getGingerIssuers()
     {
         if (empty($this->gingerIssuers)) {
-            $this->gingerIssuers = $this->api->gingerGetIssuers();
+            $gingerGetIssuers = $this->api->gingerGetIssuers();
+            $this->gingerIssuers = array_reduce((array)$gingerGetIssuers, function($carry, $item) {
+                if (isset($item['id'])) {
+                    $carry[$item['id']] = $item;
+                }
+                return $carry;
+            }, []);
         }
         return $this->gingerIssuers;
     }
+
+
 }

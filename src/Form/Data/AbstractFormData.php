@@ -9,8 +9,8 @@
 namespace Form\Data;
 
 
-use Form\Validators\Interfaces\ErrorMessageValidatorInterface;
-use Form\Validators\Interfaces\NamedValidatorInterface;
+use Application\Interfaces\ErrorMessageInterface;
+use Application\Interfaces\NamedInterface;
 use Form\Validators\Interfaces\ValidatorInterface;
 
 abstract class AbstractFormData
@@ -33,7 +33,7 @@ abstract class AbstractFormData
             foreach ($this->getFieldValidators($rawField) as $fieldValidator) {
                 if (!$fieldValidator->validate($rawValue)) {
                     $fieldsValids[$rawField] = false;
-                    $this->validationErrors[] = $fieldValidator instanceof ErrorMessageValidatorInterface
+                    $this->validationErrors[] = $fieldValidator instanceof ErrorMessageInterface
                         ? $fieldValidator->getError()
                         : 'error';
                     break(2);
@@ -76,7 +76,7 @@ abstract class AbstractFormData
 
     public function addValidator(ValidatorInterface $validatorInterface, $name = null)
     {
-        if ($validatorInterface instanceof NamedValidatorInterface) {
+        if ($validatorInterface instanceof NamedInterface) {
             $this->validators[$validatorInterface->getName()][] = $validatorInterface;
         } elseif ($name) {
             $this->validators[$name][] = $validatorInterface;

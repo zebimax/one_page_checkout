@@ -15,7 +15,7 @@ interface PaymentMethodInterface
 {
     function addOwnFieldsToCheckoutForm(CheckoutForm $checkoutForm);
     function isCanProcess(CheckoutForm $checkoutForm);
-    function process(CheckoutForm $checkoutForm);
+    function process($orderId, array $data);
     function extractPaymentInfo(array $data);
     function getCode();
 }

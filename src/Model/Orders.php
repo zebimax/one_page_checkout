@@ -16,13 +16,10 @@ class Orders extends Model
         parent::__construct($db, self::ORDERS_TABLE);
     }
 
-    public function makeOrder(array $data)
+    public function makeOrder(array $data, array $paymentData)
     {
-        if (!isset($data['payment_info']) || !is_array($data['payment_info'])) {
-            throw new \Exception('Not valid payment info for order!');
-        }
         $this->startTransaction();
-        $this->query(sprintf('INSERT INTO %s ', $this->table));
+        $this->query(sprintf('INSERT INTO %s () VALUES()', $this->table));
         $orderId = $this->db->getConnection()->insert_id;
         if (!$orderId) {
             $this->rollback();
@@ -42,7 +39,7 @@ class Orders extends Model
                       location,
                       quantity,
                       country_id
-                      ) VALUES (%d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %d, %d)',
+                      ) VALUES (%d, "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", %d, %d)',
             self::ORDER_INFO_TABLE,
             $orderId,
             $this->escape($data['first_name']),
@@ -57,17 +54,18 @@ class Orders extends Model
             $data['quantity'],
             $this->getCountryIdByCode($data['country'])
         ));
-        if (!$this->db->getConnection()->insert_id) {
+        if ($error = $this->db->getConnection()->error) {
             $this->rollback();
             return false;
         }
         $this->query(sprintf(
-            'INSERT INTO %s (order_id, payment_method_id, data) VALUES (%d, %d, %s)',
+            'INSERT INTO %s (order_id, payment_method_id, data) VALUES (%d, %d, "%s")',
+            self::PAYMENT_ORDER_TABLE,
             $orderId,
             $this->getPaymentMethodIdByCode($data['payment_method']),
-            $this->escape(json_encode($data['payment_info']))
+            $this->escape(json_encode($paymentData))
         ));
-        if (!$this->db->getConnection()->insert_id) {
+        if ($error = $this->db->getConnection()->error) {
             $this->rollback();
             return false;
         }

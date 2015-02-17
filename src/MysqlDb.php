@@ -116,6 +116,6 @@ class MysqlDb
     public static function escape($string)
     {
         self::checkInstance();
-        return self::$instance->real_escape_string($string);
+        return self::$instance->getConnection()->real_escape_string($string);
     }
 }

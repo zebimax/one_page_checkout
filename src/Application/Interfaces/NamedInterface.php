@@ -6,10 +6,10 @@
  * Time: 16:49
  */
 
-namespace Form\Validators\Interfaces;
+namespace Application\Interfaces;
 
 
-interface NamedValidatorInterface extends ValidatorInterface
+interface NamedInterface
 {
     function getName();
 }
