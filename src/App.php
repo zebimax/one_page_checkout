@@ -69,7 +69,7 @@ class App
             if ($paymentMethod && $paymentMethod->checkSuccessOrder($paymentOrderId)) {
                 $updateStatus = $paymentOrderInfo
                     ->updateStatusByPaymentOrderId($paymentOrderId, PaymentOrderInfo::STATUS_SUCCESS);
-                if ($updateStatus == PaymentOrderInfo::STATUS_SUCCESS||1) {
+                if ($updateStatus == PaymentOrderInfo::STATUS_SUCCESS) {
                     $view = 'success';
                     $this->data['successMessage'] = 'Success payment: order_id ' . $paymentOrderId;
                     $this->saveOrder($paymentMethod, $paymentOrderId);
@@ -103,30 +103,22 @@ class App
             $paymentData = $paymentMethod->extractPaymentInfo($formData);
             $paymentData['total'] = $this->calculateTotal($checkoutForm->getQuantity(), 999);
             $orderId = $this->makeOrder($data, $paymentData);
-            if (!$orderId) {
-                $view = 'error';
-                $this->data = [
-                    'errors' => ['Can not create order']
-                ];
-            } else {
-                $result = $paymentMethod->process($orderId, array_merge($paymentData, $data));
-                if (!$result) {
-                    $this->data['errors'] = $paymentMethod->getTransactionErrors();
-                    $view = 'error';
+            $view = 'error';
+            $this->data = [
+                'errors' => ['Can not create order']
+            ];
+            if ($orderId && $paymentMethod->process($orderId, array_merge($paymentData, $data))) {
+                $transactionInfo = $paymentMethod->getTransactionInfo();
+                if (!$this->setPaymentOrder($transactionInfo['order_id'], $transactionInfo['payment_order_id'])) {
+                    $this->data['errors'] = ['Can not update order'];
                 } else {
-                    $transactionInfo = $paymentMethod->getTransactionInfo();
-                    if (!$this->setPaymentOrder($transactionInfo['order_id'], $transactionInfo['payment_order_id'])) { //todo move logic to paymentMethod
-                        $this->data['errors'] = ['Can not update order'];
-                        $view = 'error';
+                    if ($paymentMethod instanceof ReturnRedirectUrlInterface) {
+                        header('location:' . $paymentMethod->returnRedirectUrl());
                     } else {
-                        if ($paymentMethod instanceof ReturnRedirectUrlInterface) {
-                            header('location:' . $paymentMethod->returnRedirectUrl());
-                        } else {
-                            header('location:http://' . PRODUCT_HOST . '/success?order_id=' . $transactionInfo['payment_order_id']);
-                        }
-                        $this->data = ['successMessage' => 'Good' . $paymentMethod->getCode()];
-                        $view = 'success';
+                        header('location:http://' . PRODUCT_HOST . '/success?order_id=' . $transactionInfo['payment_order_id']);
                     }
+                    $this->data = ['successMessage' => 'Good' . $paymentMethod->getCode()];
+                    $view = 'success';
                 }
             }
         }
@@ -270,6 +262,7 @@ class App
     }
 
     /**
+     * @param $configKey
      * @return array
      */
     private function getArrayFromConfig($configKey)
