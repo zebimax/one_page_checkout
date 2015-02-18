@@ -21,6 +21,9 @@ abstract class AbstractFormData
     protected $validationErrors = [];
     protected $data = [];
 
+    /**
+     * @param array $rawData
+     */
     public function __construct(array $rawData = [])
     {
         $this->rawData = $rawData;
@@ -74,6 +77,11 @@ abstract class AbstractFormData
         return $this->valid;
     }
 
+    /**
+     * @param ValidatorInterface $validatorInterface
+     * @param null $name
+     * @throws \Exception
+     */
     public function addValidator(ValidatorInterface $validatorInterface, $name = null)
     {
         if ($validatorInterface instanceof NamedInterface) {
@@ -85,6 +93,10 @@ abstract class AbstractFormData
         }
     }
 
+    /**
+     * @param $key
+     * @return bool
+     */
     public function getRawValue($key)
     {
         if (isset($this->rawData[$key])) {

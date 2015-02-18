@@ -10,9 +10,7 @@ use Form\Data\AbstractFormData;
 abstract class AbstractFrom
 {
     protected $fields = [];
-    /**
-     * @var AbstractFormComponent[]
-     */
+    /** @var AbstractFormComponent[] */
     protected $formComponents = [];
     /** @var AbstractFormData */
     protected $data;
@@ -21,10 +19,13 @@ abstract class AbstractFrom
     protected $name;
     protected $componentsGlue = '';
     protected $validationErrors = [];
-
-
     protected $formTemplate = '<form name="%s" action="%s" method="%s">%s</form>';
 
+    /**
+     * @param array $formOptions
+     * @param string $action
+     * @param string $method
+     */
     public function __construct(array $formOptions = array(), $action = '', $method = 'post')
     {
         $this->setAction($action);
@@ -41,6 +42,10 @@ abstract class AbstractFrom
 
     }
 
+    /**
+     * @param $name
+     * @param array $params
+     */
     public function setComponent($name, array $params = array())
     {
         if (in_array($name, $this->fields)) {
@@ -118,12 +123,19 @@ abstract class AbstractFrom
         );
     }
 
+    /**
+     * @param AbstractFormData $formData
+     * @return $this
+     */
     public function setData(AbstractFormData $formData)
     {
         $this->data = $formData;
         return $this;
     }
 
+    /**
+     * @return bool
+     */
     public function isValid()
     {
         if (!$this->data) {
@@ -133,6 +145,9 @@ abstract class AbstractFrom
         return $this->data->isValid();
     }
 
+    /**
+     * @return array
+     */
     public function getValidationErrors()
     {
         if (!$this->data) {
@@ -141,6 +156,10 @@ abstract class AbstractFrom
         return array_merge($this->validationErrors, $this->data->getValidationErrors());
     }
 
+    /**
+     * @param $key
+     * @return bool
+     */
     public function getFormDataValue($key)
     {
         return $this->data->getRawValue($key);

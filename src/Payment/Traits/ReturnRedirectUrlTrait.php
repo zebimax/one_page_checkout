@@ -13,6 +13,9 @@ trait ReturnRedirectUrlTrait
 {
     protected $redirectUrl;
 
+    /**
+     * @return mixed
+     */
     public function returnRedirectUrl()
     {
         return $this->redirectUrl;

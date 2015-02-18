@@ -12,11 +12,18 @@ use Form\Component\TextComponent;
 class Label extends TextComponent
 {
     private $labelFor;
+
+    /**
+     * @param $labelFor
+     */
     public function setLabelFor($labelFor)
     {
         $this->labelFor = $labelFor;
     }
 
+    /**
+     * @return string
+     */
     public function make()
     {
         $labelFor = $this->labelFor ? $this->labelFor : $this->name;

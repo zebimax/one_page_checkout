@@ -11,6 +11,7 @@ namespace Model;
 
 class Model
 {
+    /** @var \MysqlDb */
     protected $db;
     protected $table;
     private $tables = [];
@@ -20,12 +21,21 @@ class Model
     const PAYMENT_ORDER_TABLE = 'payment_order_info';
     const COUNTRIES_TABLE = 'countries';
 
+    /**
+     * @param \MysqlDb $db
+     * @param null $table
+     * @throws \Exception
+     */
     public function __construct(\MysqlDb $db, $table = null)
     {
         $this->db = $db;
         $this->setTable($table);
     }
 
+    /**
+     * @param $sql
+     * @return array
+     */
     public function getRows($sql)
     {
         $data = [];
@@ -38,6 +48,10 @@ class Model
         return $data;
     }
 
+    /**
+     * @param $sql
+     * @return array|bool
+     */
     public function getRow($sql)
     {
         $result = $this->db->getConnection()->query($sql);
@@ -47,12 +61,21 @@ class Model
         return false;
     }
 
-    public function tableSelect(array $fields = [], array $join = [], array $where = [], array $params = [])
+    /**
+     * @param array $fields
+     * @param array $join
+     * @param array $where
+     * @param array $params
+     * @param bool $oneRow
+     * @return array|bool
+     * @throws \Exception
+     */
+    public function tableSelect(array $fields = [], array $join = [], array $where = [], array $params = [], $oneRow = false)
     {
         if (!$this->table) {
             throw new \Exception('table is not set!');
         }
-        return $this->getRows(sprintf(
+        $sql = sprintf(
             'SELECT %s FROM %s %s  %s %s',
             $this->makeFields($fields),
             $this->table,
@@ -60,17 +83,106 @@ class Model
             $this->makeWhere($where),
             implode(' ', $params)
 
-        ));
+        );
+        return $oneRow ? $this->getRow($sql) : $this->getRows($sql);
     }
 
+    /**
+     * @param $string
+     * @return string
+     */
     public function escape($string)
     {
         return $this->db->escape($string);
     }
 
+    /**
+     * @param $sql
+     * @return bool|\mysqli_result
+     */
     protected function query($sql)
     {
         return $this->db->getConnection()->query($sql);
+    }
+
+
+    /**
+     * @param array $sqls
+     * @return bool
+     */
+    protected function transaction(array $sqls)
+    {
+        $this->startTransaction();
+        $success = true;
+        foreach ($sqls as $sql) {
+            $this->query($sql);
+            if ($this->db->getConnection()->error) {
+                $success = false;
+                break;
+            }
+        }
+        return $this->finishTransaction($success);
+    }
+
+    /**
+     * @return bool
+     */
+    protected function startTransaction()
+    {
+        return $this->db->getConnection()->begin_transaction();
+    }
+
+    /**
+     * @return bool
+     */
+    protected function commit()
+    {
+        return $this->db->getConnection()->commit();
+    }
+
+    /**
+     * @return bool
+     */
+    protected function rollback()
+    {
+        return $this->db->getConnection()->rollback();
+    }
+
+    /**
+     * @param $success
+     * @return bool
+     */
+    protected function finishTransaction($success)
+    {
+        return $success ? $this->commit() : $this->rollback();
+    }
+
+    /**
+     * @param $code
+     * @return bool
+     */
+    protected function getCountryIdByCode($code)
+    {
+        $row = $this->getRow(sprintf(
+            'SELECT id FROM %s WHERE iso3_code = "%s"',
+            Model::COUNTRIES_TABLE,
+            $this->escape($code)
+        ));
+        return $row ? $row['id'] : false;
+    }
+
+    /**
+     * @param $code
+     * @return bool
+     */
+    protected function getPaymentMethodIdByCode($code)
+    {
+        $row = $this->getRow(sprintf(
+            'SELECT id FROM %s WHERE code = "%s"',
+            Model::PAYMENT_METHODS_TABLE,
+            $this->escape($code)
+        ));
+        return $row ? $row['id'] : false;
     }
 
     /**
@@ -90,6 +202,10 @@ class Model
         }
     }
 
+    /**
+     * @param array $fields
+     * @return string
+     */
     private function makeFields(array $fields)
     {
         $fieldsSql = '';
@@ -107,6 +223,10 @@ class Model
         }
     }
 
+    /**
+     * @param array $joins
+     * @return string
+     */
     private function makeJoins(array $joins)
     {
         $joinsSql = '';
@@ -129,6 +249,10 @@ class Model
         return $joinsSql;
     }
 
+    /**
+     * @param array $where
+     * @return string
+     */
     private function makeWhere(array $where)
     {
         $whereSql = '';
@@ -136,63 +260,5 @@ class Model
             $whereSql .= "AND {$condition} ";
         }
         return $whereSql ? 'WHERE ' . ltrim($whereSql, ' AND') : '';
-    }
-
-    protected function transaction(array $sqls)
-    {
-        $this->startTransaction();
-        $success = true;
-        foreach ($sqls as $sql) {
-            $this->query($sql);
-            if ($this->db->getConnection()->error) {
-                $success = false;
-                break;
-            }
-        }
-        return $this->finishTransaction($success);
-    }
-
-    protected function startTransaction()
-    {
-        return $this->db->getConnection()->begin_transaction();
-    }
-
-    protected function commit()
-    {
-        return $this->db->getConnection()->commit();
-    }
-
-    protected function rollback()
-    {
-        return $this->db->getConnection()->rollback();
-    }
-
-    /**
-     * @param $success
-     * @return bool
-     */
-    protected function finishTransaction($success)
-    {
-        return $success ? $this->commit() : $this->rollback();
-    }
-
-    protected function getCountryIdByCode($code)
-    {
-        $row = $this->getRow(sprintf(
-            'SELECT id FROM %s WHERE iso3_code = "%s"',
-            Model::COUNTRIES_TABLE,
-            $this->escape($code)
-        ));
-        return $row ? $row['id'] : false;
-    }
-
-    protected function getPaymentMethodIdByCode($code)
-    {
-        $row = $this->getRow(sprintf(
-            'SELECT id FROM %s WHERE code = "%s"',
-            Model::PAYMENT_METHODS_TABLE,
-            $this->escape($code)
-        ));
-        return $row ? $row['id'] : false;
     }
 }

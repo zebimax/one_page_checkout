@@ -1,4 +1,6 @@
 <?php
+use Application\Tools\Interfaces\SaverInterface;
+use Application\Tools\XMLSaver;
 use Form\CheckoutForm;
 use Form\Component\Field\Select;
 use Form\Data\FormData;
@@ -7,6 +9,7 @@ use Model\Model;
 use Model\Orders;
 use Model\PaymentOrderInfo;
 use Payment\AbstractPaymentMethod;
+use Payment\IdealPayment;
 use Payment\Interfaces\ReturnRedirectUrlInterface;
 
 /**
@@ -23,13 +26,21 @@ class App
     private $config;
     private $db;
     private $paymentOrderInfoModel;
+    private $saver;
 
+    /**
+     * @param ConfigInterface $configInterface
+     * @param MysqlDb $db
+     */
     public function __construct(ConfigInterface $configInterface, MysqlDb $db)
     {
         $this->config = $configInterface;
         $this->db = $db;
     }
 
+    /**
+     *
+     */
     public function index()
     {
         $checkoutForm = new CheckoutForm($this->getCheckoutFormOptions());
@@ -40,6 +51,18 @@ class App
         ];
     }
 
+    /**
+     *
+     */
+    public function test()
+    {
+        $this->saveOrder($this->getPaymentMethod('ideal'), 'b0fe38b9-2682-4329-a838-403a3518e669');
+    }
+
+    /**
+     * @param $paymentOrderId
+     * @return string
+     */
     public function success($paymentOrderId)
     {
         $view = 'error';
@@ -55,7 +78,7 @@ class App
                 if ($updateStatus == PaymentOrderInfo::STATUS_SUCCESS||1) {
                     $view = 'success';
                     $this->data['successMessage'] = 'Success payment: order_id ' . $paymentOrderId;
-                    $this->saveOrder($paymentOrderId);
+                    $this->saveOrder($paymentMethod, $paymentOrderId);
                 }
             }
         }
@@ -65,11 +88,18 @@ class App
         return $view;
     }
 
+    /**
+     *
+     */
     public function error()
     {
         
     }
 
+    /**
+     * @param array $data
+     * @return string
+     */
     public function checkout(array $data)
     {
         $checkoutForm = new CheckoutForm($this->getCheckoutFormOptions());
@@ -119,7 +149,15 @@ class App
         }
         return $view;
     }
-
+    /**
+     * @param SaverInterface $saver
+     * @return $this
+     */
+    public function setSaver(SaverInterface $saver)
+    {
+        $this->saver = $saver;
+        return $this;
+    }
     /**
      * @param $view
      * @return $this
@@ -130,6 +168,9 @@ class App
         return $this;
     }
 
+    /**
+     * @param $layout
+     */
     public function render($layout)
     {
         if (file_exists($layout)) {
@@ -137,7 +178,17 @@ class App
             include $layout;
         }
     }
-
+    /**
+     * @return SaverInterface
+     * @throws Exception
+     */
+    private function getSaver()
+    {
+        if (!$this->saver || !$this->saver instanceof SaverInterface) {
+            throw new Exception('Saver must implements SaverInterface');
+        }
+        return $this->saver;
+    }
     /**
      * @return array
      */
@@ -150,12 +201,15 @@ class App
         ]);
     }
 
+    /**
+     * @return array|bool
+     * @throws Exception
+     */
     private function getCountries()
     {
         $countriesModel = new Model($this->db, Model::COUNTRIES_TABLE);
         return $countriesModel->tableSelect(['value' => 'iso1_code', 'name']);
     }
-
     /**
      * @return AbstractPaymentMethod[]
      */
@@ -169,7 +223,6 @@ class App
         }
         return $paymentMethods;
     }
-
     /**
      * @param $code
      * @return AbstractPaymentMethod|null
@@ -187,6 +240,11 @@ class App
         return $paymentMethod instanceof AbstractPaymentMethod ? $paymentMethod : null;
     }
 
+    /**
+     * @param array $orderData
+     * @param array $paymentData
+     * @return bool|mixed
+     */
     private function makeOrder(array $orderData, array $paymentData)
     {
         /** @var Orders $ordersModel*/
@@ -194,12 +252,20 @@ class App
         return $ordersModel->makeOrder($orderData, $paymentData);
     }
 
+    /**
+     * @param $orderId
+     * @param $paymentOrderId
+     * @return bool
+     */
     private function setPaymentOrder($orderId, $paymentOrderId)
     {
         $paymentOrderInfo = $this->getPaymentOrdersInfoModel();
         return $paymentOrderInfo->setPaymentOrder($orderId, $paymentOrderId);
     }
 
+    /**
+     * @return array
+     */
     private function getCheckoutFormValidators()
     {
         $validators = [];
@@ -210,7 +276,6 @@ class App
         }
         return $validators;
     }
-
     /**
      * @return array
      */
@@ -226,11 +291,16 @@ class App
         }
         return $arrayFromConfig;
     }
-     private function calculateTotal($quantity, $price)
+
+    /**
+     * @param $quantity
+     * @param $price
+     * @return mixed
+     */
+    private function calculateTotal($quantity, $price)
      {
          return $quantity * $price;
      }
-
     /**
      * @return PaymentOrderInfo
      */
@@ -242,8 +312,147 @@ class App
         return $this->paymentOrderInfoModel;
     }
 
-    private function saveOrder($paymentOrderId)
+    /**
+     * @param AbstractPaymentMethod $paymentMethod
+     * @param $paymentOrderId
+     * @throws Exception
+     */
+    private function saveOrder(AbstractPaymentMethod $paymentMethod, $paymentOrderId)
     {
         $info = $this->getPaymentOrdersInfoModel()->getInfo($paymentOrderId);
+        $this->getSaver()->save($this->prepareOrderForXml(
+                $info,
+                json_decode($info['payment_data'], JSON_OBJECT_AS_ARRAY),
+                $paymentMethod->getOrderInfo($paymentOrderId)
+            )
+        );
+    }
+
+    /**
+     * @param array $data
+     * @param array $paymentData
+     * @param array $orderInfo
+     * @return array
+     */
+    private function prepareOrderForXml(array $data, array $paymentData, array $orderInfo)
+    {
+        $address = [
+            'elements' => [
+                'company' => ['text' => $data['company']],
+                'name_first' => ['text' => $data['first_name']],
+                'name_last' => ['text' => $data['last_name']],
+                'address1' => ['text' => "{$data['street']} {$data['house_number']}"],
+                'address2' => ['text' => ''],
+                'city' => ['text' => $data['city']],
+                'zip' => ['text' => trim(preg_replace('/\D/', '', $data['post_code']))],
+                'state' => ['text' => trim(preg_replace('/\d/', '', $data['post_code']))],
+                'country' => ['text' => $data['country_code']],
+                'phone' => ['text' => str_replace(['+', '-', '(', ')'], '', $data['phone'])]
+            ]
+        ];
+        $created = new DateTime($orderInfo['created']);
+        return [
+            'id' => 'order_' . $data['order_id'], 'version' => '1.0',
+            'data' => [
+                'ordercollection' => [
+                    'attributes' => ['xmlns:php' => 'http://php.net/xsl'],
+                    'elements' => [
+                        'order' => [
+                            'elements' => [
+                                'id' => [
+                                    'elements' => [
+                                        'primary_id' => ['text' => $data['order_id']],
+                                        'created_at' => ['text' => $created->format('Y-m-d H:i:s')]
+                                    ]
+                                ],
+                                'ginger_order_id' => ['text' => $data['payment_code'] == IdealPayment::IDEAL ? $orderInfo['id'] : ''],
+                                'customer_email' => ['text' => $data['email']],
+                                'payment' => [
+                                    'elements' => [
+                                        'method' => ['text' => $data['payment_code']],
+                                        'method_title' => ['text' => $data['payment_name']],
+                                    ]
+                                ],
+                                'billing' => [
+                                    'elements' => [
+                                        'total' => ['text' => $paymentData['total']],
+                                        'discount_amount' => ['text' => '0.0000'],
+                                        'shipping_amount' => ['text' => '0.0000'],
+                                        'payment_fee' => ['text' => '0'],
+                                        'address' => $address
+                                    ]
+                                ],
+                                'time' => [
+                                    'elements' => [
+                                        'order_time' => ['text' => time()]
+                                    ]
+                                ],
+                                'ship_data' => [
+                                    'elements' => [
+                                        'address' => $address,
+                                        'box' => [
+                                            'elements' => [
+                                                'item' => [
+                                                    'elements' => [
+                                                        'products_name' => ['text' => PRODUCT_NAME],
+                                                        'quantity' => ['text' => $data['quantity']],
+                                                        'ean_code' => ['text' => PRODUCT_EAN],
+                                                        'price' => ['text' => $this->getPrice()],
+                                                        'price_incl_tax' => ['text' => $this->getPriceInclTax()],
+                                                        'tax_percent' => ['text' => $this->getTaxPercent()],
+                                                        'row_total' => ['text' => $this->getRawTotal()],
+                                                        'row_total_incl_tax' => ['text' => $this->getRawTotalInclTax()]
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getPrice()
+    {
+        return $this->config->get('product_price');
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getPriceInclTax()
+    {
+        return $this->getPrice() * (1 + $this->getTaxPercent() / 100);
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getTaxPercent()
+    {
+        return $this->config->get('product_tax_percent');
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getRawTotal()
+    {
+        return $this->config->get('product_raw_total');
+    }
+
+    /**
+     * @return mixed
+     */
+    private function getRawTotalInclTax()
+    {
+        return $this->getRawTotal() * (1 + $this->getTaxPercent() / 100);
     }
 }

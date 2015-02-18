@@ -5,10 +5,13 @@
  * Date: 12.02.15
  * Time: 18:31
  */
+use Application\Tools\XMLSaver;
+
 define('APP_DIR', dirname(__DIR__ . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 define('VIEW_APP_DIR', APP_DIR . 'views' . DIRECTORY_SEPARATOR);
 define('PRODUCT_HOST', 'dod-product.local');
 define('PRODUCT_NAME', 'vitamine gummies');
+define('PRODUCT_EAN', 'ean_code_here');
 
 $loader = require_once APP_DIR .'/vendor/autoload.php';
 
@@ -28,6 +31,9 @@ switch (true) {
         break;
     case (isset($_POST['checkout']) && $_POST['checkout']) :
         $view = VIEW_APP_DIR . $app->checkout($_POST) . '.phtml';
+        break;
+    case ($uri == '/test') :
+        $app->setSaver(new XMLSaver(APP_DIR . 'xml' . DIRECTORY_SEPARATOR))->test();
         break;
     default:
         $view = VIEW_APP_DIR . 'index.phtml';

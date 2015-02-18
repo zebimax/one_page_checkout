@@ -12,25 +12,6 @@ class MysqlDb
     private $password = false;
     private $db;
 
-    private static function checkInstance()
-    {
-        if (empty(self::$instance)) {
-            throw new Exception('Instance is not initialized!');
-        }
-    }
-
-    private function __clone() {}
-
-    /**
-     * @param array $params
-     */
-    private function __construct(array $params = array())
-    {
-        $this->setParams($params);
-        $this->connection = new mysqli($this->host, $this->user, $this->password, $this->db);
-        $this->connection->set_charset("utf8");
-    }
-
     /**
      * @param array $params
      * @return MysqlDb
@@ -42,6 +23,31 @@ class MysqlDb
         }
 
         return self::$instance;
+    }
+
+    /**
+     * @throws Exception
+     */
+    private static function checkInstance()
+    {
+        if (empty(self::$instance)) {
+            throw new Exception('Instance is not initialized!');
+        }
+    }
+
+    /**
+     *
+     */
+    private function __clone() {}
+
+    /**
+     * @param array $params
+     */
+    private function __construct(array $params = array())
+    {
+        $this->setParams($params);
+        $this->connection = new mysqli($this->host, $this->user, $this->password, $this->db);
+        $this->connection->set_charset("utf8");
     }
 
     /**
@@ -81,6 +87,9 @@ class MysqlDb
         $this->checkParams();
     }
 
+    /**
+     * @throws Exception
+     */
     private function checkParams()
     {
         $errors = array();
@@ -102,6 +111,10 @@ class MysqlDb
         }
     }
 
+    /**
+     * @return array
+     * @throws Exception
+     */
     public static function getAllTables()
     {
         self::checkInstance();
@@ -113,6 +126,11 @@ class MysqlDb
         return $tables;
     }
 
+    /**
+     * @param $string
+     * @return string
+     * @throws Exception
+     */
     public static function escape($string)
     {
         self::checkInstance();

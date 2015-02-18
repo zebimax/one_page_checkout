@@ -11,11 +11,19 @@ namespace Model;
 
 class Orders extends Model
 {
+    /**
+     * @param \MysqlDb $db
+     */
     public function __construct(\MysqlDb $db)
     {
         parent::__construct($db, self::ORDERS_TABLE);
     }
 
+    /**
+     * @param array $data
+     * @param array $paymentData
+     * @return bool|mixed
+     */
     public function makeOrder(array $data, array $paymentData)
     {
         $this->startTransaction();
@@ -72,5 +80,4 @@ class Orders extends Model
         $this->commit();
         return $orderId;
     }
-
 }

@@ -19,14 +19,19 @@ abstract class AbstractField extends AbstractFormComponent
     protected $attributes = array();
     protected $type;
     protected $template = '<%s type="%s" name="%s" id="%s" class="%s" value="%s" %s/>';
-
     protected $tag;
 
+    /**
+     * @param array $params
+     */
     public function __construct(array $params = array())
     {
         $this->setOptions($params);
     }
 
+    /**
+     * @param array $params
+     */
     public function setOptions(array $params)
     {
         foreach ($params as $key => $value) {
@@ -159,6 +164,9 @@ abstract class AbstractField extends AbstractFormComponent
         return vsprintf($this->template, $this->getTemplateParameters());
     }
 
+    /**
+     * @return string
+     */
     public function make()
     {
         return self::makeField();
@@ -182,6 +190,9 @@ abstract class AbstractField extends AbstractFormComponent
         );
     }
 
+    /**
+     * @return string
+     */
     protected function makeAttributes()
     {
         $str = '';

@@ -12,6 +12,12 @@ namespace Form\Validators\Traits;
 trait CallableValidationTrait
 {
     protected $validation;
+
+    /**
+     * @param $value
+     * @return mixed
+     * @throws \Exception
+     */
     public function validate($value)
     {
         if (!$this->validation) {
@@ -20,6 +26,10 @@ trait CallableValidationTrait
         return call_user_func($this->validation, $value);
     }
 
+    /**
+     * @param callable $validation
+     * @return $this
+     */
     public function setValidation(callable $validation)
     {
         $this->validation = $validation;

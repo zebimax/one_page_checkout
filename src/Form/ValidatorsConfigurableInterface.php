@@ -9,7 +9,8 @@
 namespace Form;
 
 
-use Form\Validators\ValidatorInterface;
+
+use Form\Validators\Interfaces\ValidatorInterface;
 
 interface ValidatorsConfigurableInterface
 {

@@ -19,6 +19,11 @@ class CallableValidationValidator extends AbstractCallableValidationValidator
     use ErrorMessageTrait;
     use NamedTrait;
 
+    /**
+     * @param null $name
+     * @param null $error
+     * @param callable $validation
+     */
     public function __construct($name = null, $error = null, callable $validation = null)
     {
         $this->name = $name;

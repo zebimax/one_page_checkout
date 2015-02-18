@@ -9,11 +9,20 @@
 class Config implements ConfigInterface
 {
     private $data = [];
+
+    /**
+     * @param array $config
+     */
     public function __construct(array $config = [])
     {
         $this->data = $config;
     }
 
+    /**
+     * @param $key
+     * @param null $default
+     * @return null
+     */
     public function get($key, $default = null)
     {
         $result = $default;

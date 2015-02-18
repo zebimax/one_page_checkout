@@ -14,11 +14,19 @@ class PaymentOrderInfo extends Model
     const STATUS_ACCEPTED = 1;
     const STATUS_SUCCESS = 2;
 
+    /**
+     * @param \MysqlDb $db
+     */
     public function __construct(\MysqlDb $db)
     {
         parent::__construct($db, self::PAYMENT_ORDER_TABLE);
     }
 
+    /**
+     * @param $orderId
+     * @param $paymentOrderId
+     * @return bool
+     */
     public function setPaymentOrder($orderId, $paymentOrderId)
     {
         $this->query(sprintf(
@@ -36,6 +44,11 @@ class PaymentOrderInfo extends Model
         return $updateStatus ? $orderId : false;
     }
 
+    /**
+     * @param $orderId
+     * @param $status
+     * @return bool
+     */
     public function updateStatus($orderId, $status)
     {
         $this->query(sprintf(
@@ -47,6 +60,11 @@ class PaymentOrderInfo extends Model
         return $this->db->getConnection()->affected_rows ? $status : false;
     }
 
+    /**
+     * @param $paymentOrderId
+     * @param $status
+     * @return bool
+     */
     public function updateStatusByPaymentOrderId($paymentOrderId, $status)
     {
         $this->query(sprintf(
@@ -58,6 +76,11 @@ class PaymentOrderInfo extends Model
         return $this->db->getConnection()->affected_rows ? $status : false;
     }
 
+    /**
+     * @param $paymentOrderId
+     * @return bool
+     * @throws \Exception
+     */
     public function getPaymentByPaymentOrderId($paymentOrderId)
     {
         $methodRows = $this->tableSelect(
@@ -73,6 +96,11 @@ class PaymentOrderInfo extends Model
         }
     }
 
+    /**
+     * @param $paymentOrderId
+     * @return array|bool
+     * @throws \Exception
+     */
     public function getInfo($paymentOrderId)
     {
         return $this->tableSelect(
@@ -85,7 +113,11 @@ class PaymentOrderInfo extends Model
                 'profession', 'post_code',
                 'house_number', 'street',
                 'location', 'quantity',
-                'country_code' => 'c.iso1_code'
+                'country_code' => 'c.iso1_code',
+                'oi.order_id',
+                'payment_order_id',
+                'company',
+                'city'
             ],
             [
                 sprintf('%s pm on pm.id = %s.payment_method_id', self::PAYMENT_METHODS_TABLE, $this->table),
@@ -93,8 +125,8 @@ class PaymentOrderInfo extends Model
                 sprintf('%s c on c.id = %s.country_id', self::COUNTRIES_TABLE, 'oi')
             ],
             [sprintf('%s.payment_order_id = "%s"', $this->table, $this->escape($paymentOrderId))],
-            ['LIMIT 1']
+            ['LIMIT 1'],
+            true
         );
     }
-
 }

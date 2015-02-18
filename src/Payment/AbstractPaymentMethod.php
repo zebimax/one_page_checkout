@@ -21,6 +21,12 @@ abstract class AbstractPaymentMethod implements PaymentMethodInterface
     abstract public function process($orderId, array $data);
     abstract public function extractPaymentInfo(array $data);
     abstract function checkSuccessOrder($paymentOrderId);
+    abstract function getOrderInfo($orderId);
+
+    /**
+     * @param CheckoutForm $checkoutForm
+     * @return bool
+     */
     public function isCanProcess(CheckoutForm $checkoutForm)
     {
         return $checkoutForm->getFormDataValue('payment_method') === $this->code;
@@ -42,6 +48,10 @@ abstract class AbstractPaymentMethod implements PaymentMethodInterface
         return $this->transactionErrors;
     }
 
+    /**
+     * @param array $data
+     * @return string
+     */
     protected function getPaymentDescription(array $data)
     {
         return sprintf(

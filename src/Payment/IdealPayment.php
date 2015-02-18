@@ -29,22 +29,35 @@ class IdealPayment extends AbstractPaymentMethod
 {
     use ValidatorsConfigurableTrait;
     use ReturnRedirectUrlTrait;
+    const IDEAL = 'ideal';
     protected $api;
     private $sharedComponents = [];
     private $gingerIssuers = [];
 
+    /**
+     * @param GingerApi $api
+     */
     public function __construct(GingerApi $api)
     {
         $this->api = $api;
-        $this->code = 'ideal';
+        $this->code = self::IDEAL;
     }
 
+    /**
+     * @param $paymentOrderId
+     * @return bool
+     */
     public function checkSuccessOrder($paymentOrderId)
     {
         $orderStatus = $this->api->getOrderStatus($paymentOrderId);
         return $orderStatus == GingerApi::ORDER_STATUS_COMPLETED;
     }
 
+    /**
+     * @param $orderId
+     * @param array $data
+     * @return bool
+     */
     public function process($orderId, array $data)
     {
         $gingerCreateIdealOrder = $this->api->gingerCreateIdealOrder(
@@ -65,6 +78,19 @@ class IdealPayment extends AbstractPaymentMethod
         return true;
     }
 
+    /**
+     * @param $orderId
+     * @return array|mixed|string
+     */
+    public function getOrderInfo($orderId)
+    {
+        return $this->api->getOrderDetails($orderId);
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
     public function extractPaymentInfo(array $data)
     {
         if(isset($data['ideal']['banks'])) {
@@ -76,11 +102,17 @@ class IdealPayment extends AbstractPaymentMethod
         return [];
     }
 
+    /**
+     * @return string
+     */
     public function getCode()
     {
         return $this->code;
     }
 
+    /**
+     *
+     */
     function activateValidators()
     {
         $this->validators = [
@@ -94,6 +126,9 @@ class IdealPayment extends AbstractPaymentMethod
         ];
     }
 
+    /**
+     * @param CheckoutForm $checkoutForm
+     */
     public function addOwnFieldsToCheckoutForm(CheckoutForm $checkoutForm)
     {
         $checkoutForm->addCustomField('ideal', function() {

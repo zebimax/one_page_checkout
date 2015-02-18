@@ -124,6 +124,11 @@ class AfterPayPayment extends AbstractPaymentMethod
         return $this->code;
     }
 
+    function getOrderInfo($orderId)
+    {
+        return [];
+    }
+
     function activateValidators()
     {
         $this->validators = [

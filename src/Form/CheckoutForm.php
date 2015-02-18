@@ -37,8 +37,6 @@ class CheckoutForm extends AbstractFrom
 
     protected $name = 'checkout_form';
     protected $validators = [];
-
-    private $custom = [];
     protected $fields = array(
         self::FIRST_NAME,
         self::LAST_NAME,
@@ -61,11 +59,22 @@ class CheckoutForm extends AbstractFrom
      */
     protected $paymentMethods = [];
 
+    private $custom = [];
+
+    /**
+     * @param array $formOptions
+     * @param string $action
+     * @param string $method
+     */
     public function __construct(array $formOptions = array(), $action = '', $method = 'post')
     {
         parent::__construct($formOptions, $action, $method);
     }
 
+    /**
+     * @param $fieldName
+     * @param callable $fieldMaker
+     */
     public function addCustomField($fieldName, callable $fieldMaker)
     {
         if (!in_array($fieldName, $this->fields)) {
@@ -75,6 +84,10 @@ class CheckoutForm extends AbstractFrom
         }
     }
 
+    /**
+     * @param array $paymentMethods
+     * @return $this
+     */
     public function setPaymentMethods(array $paymentMethods)
     {
         foreach ($paymentMethods as $paymentMethod) {
@@ -110,6 +123,9 @@ class CheckoutForm extends AbstractFrom
         return false;
     }
 
+    /**
+     * @return string
+     */
     public function make()
     {
         foreach ($this->paymentMethods as $paymentMethod) {
@@ -126,6 +142,11 @@ class CheckoutForm extends AbstractFrom
         return $this->validators;
     }
 
+    /**
+     * @param AbstractFormData $formData
+     * @return $this
+     * @throws \Exception
+     */
     public function setData(AbstractFormData $formData)
     {
         parent::setData($formData);
@@ -145,11 +166,20 @@ class CheckoutForm extends AbstractFrom
         return $this;
     }
 
+    /**
+     * @return int
+     */
     public function getQuantity()
     {
         return (int)$this->data->getRawValue('quantity');
     }
 
+    /**
+     * @param $fieldName
+     * @param array $params
+     * @return Label|TextComponent
+     * @throws \Exception
+     */
     protected function createComponent($fieldName, array $params = array())
     {
         switch ($fieldName) {
@@ -333,6 +363,7 @@ class CheckoutForm extends AbstractFrom
                 if (isset($this->custom[$fieldName])) {
                     return new TextComponent('custom-' . $fieldName ,$this->custom[$fieldName]());
                 }
+                return false;
                 break;
         }
     }

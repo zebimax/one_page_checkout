@@ -14,10 +14,12 @@ class Select extends AbstractField
     protected $options = array();
     protected $template = '<select name="%s" id="%s" class="%s" %s>%s</select>';
     protected $selected;
-
     protected $before = '';
     protected $after = '';
 
+    /**
+     * @param array $options
+     */
     public function __construct(array $options)
     {
         if (isset($options[self::SELECT_OPTIONS]) && is_array($options[self::SELECT_OPTIONS])) {
@@ -55,6 +57,9 @@ class Select extends AbstractField
         $this->after = $after;
     }
 
+    /**
+     * @return array
+     */
     protected function getTemplateParameters()
     {
         return array(
@@ -66,6 +71,9 @@ class Select extends AbstractField
         );
     }
 
+    /**
+     * @return mixed
+     */
     protected function makeOptions()
     {
         $selected = $this->selected;

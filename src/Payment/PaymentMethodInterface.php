@@ -17,5 +17,6 @@ interface PaymentMethodInterface
     function isCanProcess(CheckoutForm $checkoutForm);
     function process($orderId, array $data);
     function extractPaymentInfo(array $data);
+    function getOrderInfo($orderId);
     function getCode();
 }

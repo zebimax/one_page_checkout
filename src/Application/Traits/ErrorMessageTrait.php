@@ -13,6 +13,9 @@ trait ErrorMessageTrait
 {
     protected $error = '';
 
+    /**
+     * @return string
+     */
     public function getError()
     {
         return $this->error;
