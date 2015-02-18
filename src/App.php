@@ -38,9 +38,6 @@ class App
         $this->db = $db;
     }
 
-    /**
-     *
-     */
     public function index()
     {
         $checkoutForm = new CheckoutForm($this->getCheckoutFormOptions());
@@ -51,12 +48,9 @@ class App
         ];
     }
 
-    /**
-     *
-     */
     public function test()
     {
-        $this->saveOrder($this->getPaymentMethod('ideal'), 'b0fe38b9-2682-4329-a838-403a3518e669');
+        $this->saveOrder($this->getPaymentMethod('afterpay'), 'sfasf');
     }
 
     /**
@@ -86,14 +80,6 @@ class App
             $this->index();
         }
         return $view;
-    }
-
-    /**
-     *
-     */
-    public function error()
-    {
-        
     }
 
     /**
@@ -149,6 +135,7 @@ class App
         }
         return $view;
     }
+
     /**
      * @param SaverInterface $saver
      * @return $this
@@ -158,6 +145,7 @@ class App
         $this->saver = $saver;
         return $this;
     }
+
     /**
      * @param $view
      * @return $this
@@ -178,6 +166,7 @@ class App
             include $layout;
         }
     }
+
     /**
      * @return SaverInterface
      * @throws Exception
@@ -189,6 +178,7 @@ class App
         }
         return $this->saver;
     }
+
     /**
      * @return array
      */
@@ -210,6 +200,7 @@ class App
         $countriesModel = new Model($this->db, Model::COUNTRIES_TABLE);
         return $countriesModel->tableSelect(['value' => 'iso1_code', 'name']);
     }
+
     /**
      * @return AbstractPaymentMethod[]
      */
@@ -223,6 +214,7 @@ class App
         }
         return $paymentMethods;
     }
+
     /**
      * @param $code
      * @return AbstractPaymentMethod|null
@@ -276,6 +268,7 @@ class App
         }
         return $validators;
     }
+
     /**
      * @return array
      */
@@ -301,6 +294,7 @@ class App
      {
          return $quantity * $price;
      }
+
     /**
      * @return PaymentOrderInfo
      */
