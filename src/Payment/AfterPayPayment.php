@@ -40,11 +40,11 @@ class AfterPayPayment extends AbstractPaymentMethod
                 $this->getSharedTextComponent('text', '', '<div class="afterpay_fields">')->make() .
                 $this->getSharedTextComponent('text', '', '<span>AfterPay</span><br>')->make() .
                 $this->getSharedTextComponent('label', 'afterpay[day_of_birth]', 'Day of birth')->make() .
-                $this->getSharedInputComponent(['name' => 'afterpay[day_of_birth]', 'value' => 1])->make() .
+                $this->getSharedInputComponent(['name' => 'afterpay[day_of_birth]'])->make() .
                 $this->getSharedTextComponent('label', 'afterpay[month_of_birth]', 'Month')->make() .
-                $this->getSharedInputComponent(['name' => 'afterpay[month_of_birth]', 'value' => 1])->make() .
+                $this->getSharedInputComponent(['name' => 'afterpay[month_of_birth]'])->make() .
                 $this->getSharedTextComponent('label', 'afterpay[year_of_birth]', 'Year')->make() .
-                $this->getSharedInputComponent(['name' => 'afterpay[year_of_birth]', 'value' => 1989])->make() .
+                $this->getSharedInputComponent(['name' => 'afterpay[year_of_birth]'])->make() .
                 $this->getSharedTextComponent('text', '', '</div>')->make();
         });
     }
