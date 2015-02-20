@@ -27,13 +27,11 @@ $app = new App(
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 switch (true) {
     case ($uri == '/success' && isset($_GET['order_id'])):
+        $app->setSaver(new XMLSaver(APP_DIR . 'xml' . DIRECTORY_SEPARATOR));
         $view = VIEW_APP_DIR . $app->success($_GET['order_id']) . '.phtml';
         break;
     case (isset($_POST['checkout']) && $_POST['checkout']) :
         $view = VIEW_APP_DIR . $app->checkout($_POST) . '.phtml';
-        break;
-    case ($uri == '/test') :
-        $app->setSaver(new XMLSaver(APP_DIR . 'xml' . DIRECTORY_SEPARATOR))->test();
         break;
     default:
         $view = VIEW_APP_DIR . 'index.phtml';

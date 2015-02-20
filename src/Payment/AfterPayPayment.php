@@ -105,31 +105,35 @@ class AfterPayPayment extends AbstractPaymentMethod
         $authorisation['password'] = 'f31f4a4417';
         $modus = 'test'; // or 'live' for production
         $this->api->do_request($authorisation, $modus);
-        /*
-         *     afterPayMerchantID: '137393105'
-    afterPayPortfolioID: '9'
-    afterPayPassword: f31f4a4417
-         *
-         *
-         * */
     }
 
+    /**
+     * @param array $data
+     * @return array
+     */
     public function extractPaymentInfo(array $data)
     {
         return [];
     }
 
+    /**
+     * @return string
+     */
     public function getCode()
     {
         return $this->code;
     }
 
-    function getOrderInfo($orderId)
+    /**
+     * @param $orderId
+     * @return array
+     */
+    public function getOrderInfo($orderId)
     {
         return [];
     }
 
-    function activateValidators()
+    public function activateValidators()
     {
         $this->validators = [
             new CallableValidationValidator(

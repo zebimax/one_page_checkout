@@ -101,7 +101,7 @@ class App
         } else {
             $formData = $checkoutForm->getData()->getData();
             $paymentData = $paymentMethod->extractPaymentInfo($formData);
-            $paymentData['total'] = $this->calculateTotal($checkoutForm->getQuantity(), 999);
+            $paymentData['total'] = $this->calculateTotal($checkoutForm->getQuantity());
             $orderId = $this->makeOrder($data, $paymentData);
             $view = 'error';
             $this->data = [
@@ -117,8 +117,6 @@ class App
                     } else {
                         header('location:http://' . PRODUCT_HOST . '/success?order_id=' . $transactionInfo['payment_order_id']);
                     }
-                    $this->data = ['successMessage' => 'Good' . $paymentMethod->getCode()];
-                    $view = 'success';
                 }
             }
         }
@@ -177,10 +175,33 @@ class App
     private function getCheckoutFormOptions()
     {
         $configOptions = $this->config->get('checkout_form_options');
+        $this->fillFormValues($configOptions);
         return array_merge($configOptions, [
             ['name' => 'label', 'params' => ['labelFor' => CheckoutForm::COUNTRY, 'text' => 'Select countries']],
             ['name' => CheckoutForm::COUNTRY, 'params' => [Select::SELECT_OPTIONS => $this->getCountries(), Select::SELECT_SELECTED => 'NL']],
         ]);
+    }
+
+    /**
+     * @param array $formOptions
+     */
+    private function fillFormValues(array &$formOptions)
+    {
+        foreach ($formOptions as &$option) {
+            if (isset($_POST[$option['name']])) {
+                $option['params']['value'] = $this->sanitizeStr($_POST[$option['name']]);
+            }
+        }
+
+    }
+
+    /**
+     * @param $str
+     * @return string
+     */
+    private function sanitizeStr($str)
+    {
+        return trim(htmlspecialchars($str));
     }
 
     /**
@@ -280,12 +301,11 @@ class App
 
     /**
      * @param $quantity
-     * @param $price
      * @return mixed
      */
-    private function calculateTotal($quantity, $price)
+    private function calculateTotal($quantity)
      {
-         return $quantity * $price;
+         return $quantity * $this->getPrice();
      }
 
     /**
