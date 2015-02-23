@@ -1,4 +1,5 @@
 <?php
+use Application\Interfaces\PaymentOrdersInfoModelAwareInterface;
 use Application\Tools\Interfaces\SaverInterface;
 use Application\Tools\XMLSaver;
 use Form\CheckoutForm;
@@ -9,7 +10,9 @@ use Model\Model;
 use Model\Orders;
 use Model\PaymentOrderInfo;
 use Payment\AbstractPaymentMethod;
+use Payment\AfterPayPayment;
 use Payment\IdealPayment;
+use Payment\Interfaces\CurrentPaymentTransactionInfoInterface;
 use Payment\Interfaces\ReturnRedirectUrlInterface;
 
 /**
@@ -50,7 +53,7 @@ class App
 
     public function test()
     {
-        $this->saveOrder($this->getPaymentMethod('afterpay'), 'sfasf');
+        $this->getPaymentMethod('afterpay')->process(123, []);
     }
 
     /**
@@ -66,6 +69,9 @@ class App
         if ($paymentCode) {
             /** @var AbstractPaymentMethod $paymentMethod */
             $paymentMethod = $this->getPaymentMethod($paymentCode);
+            if ($paymentMethod instanceof PaymentOrdersInfoModelAwareInterface) {
+                $paymentMethod->setPaymentOrdersInfoModel($this->getPaymentOrdersInfoModel());
+            }
             if ($paymentMethod && $paymentMethod->checkSuccessOrder($paymentOrderId)) {
                 $updateStatus = $paymentOrderInfo
                     ->updateStatusByPaymentOrderId($paymentOrderId, PaymentOrderInfo::STATUS_SUCCESS);
@@ -107,20 +113,41 @@ class App
             $this->data = [
                 'errors' => ['Can not create order']
             ];
-            if ($orderId && $paymentMethod->process($orderId, array_merge($paymentData, $data))) {
+            $processData = array_merge(
+                $data,
+                [
+                    'product_tax_category' => $this->config->get('product_tax_category'),
+                    'product_price_in_cents' => $this->config->get('product_price_in_cents'),
+                    'product_id' => PRODUCT_ID,
+                    'product_name' => PRODUCT_NAME
+                ],
+                $paymentData
+            );
+            if ($orderId && $paymentMethod->process($orderId, $processData)) {
                 $transactionInfo = $paymentMethod->getTransactionInfo();
-                if (!$this->setPaymentOrder($transactionInfo['order_id'], $transactionInfo['payment_order_id'])) {
+                $currentTransactionInfo = $paymentMethod instanceof CurrentPaymentTransactionInfoInterface
+                    ? $paymentMethod->getCurrentPaymentTransactionInfo()
+                    : [];
+                if (
+                    !$this->setPaymentOrder(
+                        $transactionInfo['order_id'],
+                        $transactionInfo['payment_order_id'],
+                        $currentTransactionInfo
+                    )
+                ) {
                     $this->data['errors'] = ['Can not update order'];
                 } else {
                     if ($paymentMethod instanceof ReturnRedirectUrlInterface) {
                         header('location:' . $paymentMethod->returnRedirectUrl());
                     } else {
-                        header('location:http://' . PRODUCT_HOST . '/success?order_id=' . $transactionInfo['payment_order_id']);
+                        $this->setSaver(new XMLSaver(APP_DIR . 'xml' . DIRECTORY_SEPARATOR));
+                        $view = $this->success($transactionInfo['payment_order_id']);
                     }
                 }
             }
         }
         if ($view == 'error') {
+            $this->data['errors'] = array_merge($paymentMethod->getTransactionErrors(), (array)$this->data['errors']);
             $this->data['checkoutForm'] = $checkoutForm->make();
         }
         return $view;
@@ -260,12 +287,17 @@ class App
     /**
      * @param $orderId
      * @param $paymentOrderId
+     * @param array $paymentData
      * @return bool
      */
-    private function setPaymentOrder($orderId, $paymentOrderId)
+    private function setPaymentOrder($orderId, $paymentOrderId, array $paymentData = [])
     {
         $paymentOrderInfo = $this->getPaymentOrdersInfoModel();
-        return $paymentOrderInfo->setPaymentOrder($orderId, $paymentOrderId);
+        $result = $paymentOrderInfo->setPaymentOrder($orderId, $paymentOrderId);
+        if (!empty($paymentData)) {
+            $paymentOrderInfo->updatePaymentInfo($paymentOrderId, $paymentData);
+        }
+        return $result;
     }
 
     /**
@@ -322,15 +354,20 @@ class App
     /**
      * @param AbstractPaymentMethod $paymentMethod
      * @param $paymentOrderId
+     * @return bool
      * @throws Exception
      */
     private function saveOrder(AbstractPaymentMethod $paymentMethod, $paymentOrderId)
     {
         $info = $this->getPaymentOrdersInfoModel()->getInfo($paymentOrderId);
+        $orderInfo = $paymentMethod->getOrderInfo($paymentOrderId);
+        if (!is_array($orderInfo)) {
+            throw new \Exception('Not valid order data!');
+        }
         $this->getSaver()->save($this->prepareOrderForXml(
                 $info,
                 json_decode($info['payment_data'], JSON_OBJECT_AS_ARRAY),
-                $paymentMethod->getOrderInfo($paymentOrderId)
+                $orderInfo
             )
         );
     }
@@ -373,6 +410,7 @@ class App
                                     ]
                                 ],
                                 'ginger_order_id' => ['text' => $data['payment_code'] == IdealPayment::IDEAL ? $orderInfo['id'] : ''],
+                                'after_pay_order_reference' => ['text' => $data['payment_code'] == AfterPayPayment::AFTER_PAY ? $orderInfo['afterPayOrderReference'] : ''],
                                 'customer_email' => ['text' => $data['email']],
                                 'payment' => [
                                     'elements' => [

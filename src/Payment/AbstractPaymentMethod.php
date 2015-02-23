@@ -19,9 +19,17 @@ abstract class AbstractPaymentMethod implements PaymentMethodInterface
 
     abstract public function addOwnFieldsToCheckoutForm(CheckoutForm $checkoutForm);
     abstract public function process($orderId, array $data);
-    abstract public function extractPaymentInfo(array $data);
     abstract function checkSuccessOrder($paymentOrderId);
     abstract function getOrderInfo($orderId);
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function extractPaymentInfo(array $data)
+    {
+        return [];
+    }
 
     /**
      * @param CheckoutForm $checkoutForm

@@ -45,6 +45,23 @@ class PaymentOrderInfo extends Model
     }
 
     /**
+     * @param $paymentOrderId
+     * @param array $paymentData
+     * @return int
+     */
+    public function updatePaymentInfo($paymentOrderId, array $paymentData)
+    {
+        $paymentInfo = $this->getPaymentInfo($paymentOrderId);
+        $this->query(sprintf(
+            'UPDATE %s SET data = "%s" WHERE payment_order_id = "%s"',
+            $this->table,
+            $this->escape(json_encode(array_merge($paymentInfo, $paymentData))),
+            $paymentOrderId
+        ));
+        return $this->db->getConnection()->affected_rows;
+    }
+
+    /**
      * @param $orderId
      * @param $status
      * @return bool
@@ -128,5 +145,22 @@ class PaymentOrderInfo extends Model
             ['LIMIT 1'],
             true
         );
+    }
+
+    /**
+     * @param $paymentOrderId
+     * @return array|mixed
+     * @throws \Exception
+     */
+    public function getPaymentInfo($paymentOrderId)
+    {
+        $row = $this->tableSelect(
+            ['data'], [], [sprintf('payment_order_id = "%s"', $this->escape($paymentOrderId))], ['LIMIT 1'], true
+        );
+
+        return (!empty($row['data']))
+            ? (array)json_decode($row['data'], JSON_OBJECT_AS_ARRAY)
+            : [];
+
     }
 }

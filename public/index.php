@@ -11,7 +11,10 @@ define('APP_DIR', dirname(__DIR__ . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 define('VIEW_APP_DIR', APP_DIR . 'views' . DIRECTORY_SEPARATOR);
 define('PRODUCT_HOST', 'dod-product.local');
 define('PRODUCT_NAME', 'vitamine gummies');
+define('PRODUCT_ID', 'vitamine_gummies');
 define('PRODUCT_EAN', 'ean_code_here');
+define('PRODUCT_TAX_CATEGORY', 1);// 1 = high, 2 = low, 3, zero, 4 no tax
+define('PRODUCT_PRICE', 1);
 
 $loader = require_once APP_DIR .'/vendor/autoload.php';
 
@@ -29,6 +32,9 @@ switch (true) {
     case ($uri == '/success' && isset($_GET['order_id'])):
         $app->setSaver(new XMLSaver(APP_DIR . 'xml' . DIRECTORY_SEPARATOR));
         $view = VIEW_APP_DIR . $app->success($_GET['order_id']) . '.phtml';
+        break;
+    case ($uri == '/test'):
+        $app->test();
         break;
     case (isset($_POST['checkout']) && $_POST['checkout']) :
         $view = VIEW_APP_DIR . $app->checkout($_POST) . '.phtml';

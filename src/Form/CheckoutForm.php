@@ -34,6 +34,9 @@ class CheckoutForm extends AbstractFrom
     const LABEL = 'label';
     const PAYMENT_METHOD = 'payment_method';
     const QUANTITY = 'quantity';
+    const SEX = 'sex';
+    const CITY = 'city';
+
 
     protected $name = 'checkout_form';
     protected $validators = [];
@@ -52,7 +55,9 @@ class CheckoutForm extends AbstractFrom
         self::BR_TAG,
         self::LABEL,
         self::PAYMENT_METHOD,
-        self::QUANTITY
+        self::QUANTITY,
+        self::CITY,
+        self::SEX
     );
     /**
      * @var PaymentMethodInterface[]
@@ -183,145 +188,21 @@ class CheckoutForm extends AbstractFrom
     protected function createComponent($fieldName, array $params = array())
     {
         switch ($fieldName) {
-            case self::FIRST_NAME :
-                $value = isset($params[AbstractField::FIELD_VALUE])
-                    ? $params[AbstractField::FIELD_VALUE]
-                    : '';
-                $fieldParams = array_merge($params, array(
-                    AbstractFormComponent::COMPONENT_NAME => self::FIRST_NAME,
-                    AbstractField::FIELD_ID => self::FIRST_NAME,
-                    AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
-                    AbstractField::FIELD_CLASS => '',
-                    AbstractField::FIELD_VALUE => htmlspecialchars($value),
-                    AbstractField::FIELD_ATTRIBUTES => array(),
-                ));
-                return new Input($fieldParams);
-                break;
-            case self::LAST_NAME :
-                $value = isset($params[AbstractField::FIELD_VALUE])
-                    ? $params[AbstractField::FIELD_VALUE]
-                    : '';
-                $fieldParams = array_merge($params, array(
-                    AbstractFormComponent::COMPONENT_NAME => self::LAST_NAME,
-                    AbstractField::FIELD_ID => self::LAST_NAME,
-                    AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
-                    AbstractField::FIELD_CLASS => '',
-                    AbstractField::FIELD_VALUE => htmlspecialchars($value),
-                    AbstractField::FIELD_ATTRIBUTES => array(),
-                ));
-                return new Input($fieldParams);
-                break;
-            case self::PHONE :
-                $value = isset($params[AbstractField::FIELD_VALUE])
-                    ? $params[AbstractField::FIELD_VALUE]
-                    : '';
-                $fieldParams = array_merge($params, array(
-                    AbstractFormComponent::COMPONENT_NAME => self::PHONE,
-                    AbstractField::FIELD_ID => self::PHONE,
-                    AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
-                    AbstractField::FIELD_CLASS => '',
-                    AbstractField::FIELD_VALUE => htmlspecialchars($value),
-                    AbstractField::FIELD_ATTRIBUTES => array(),
-                ));
-                return new Input($fieldParams);
-                break;
-            case self::EMAIL :
-                $value = isset($params[AbstractField::FIELD_VALUE])
-                    ? $params[AbstractField::FIELD_VALUE]
-                    : '';
-                $fieldParams = array_merge($params, array(
-                    AbstractFormComponent::COMPONENT_NAME => self::EMAIL,
-                    AbstractField::FIELD_ID => self::EMAIL,
-                    AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
-                    AbstractField::FIELD_CLASS => '',
-                    AbstractField::FIELD_VALUE => htmlspecialchars($value),
-                    AbstractField::FIELD_ATTRIBUTES => array(),
-                ));
-                return new Input($fieldParams);
-                break;
-            case self::PROFESSION :
-                $value = isset($params[AbstractField::FIELD_VALUE])
-                    ? $params[AbstractField::FIELD_VALUE]
-                    : '';
-                $fieldParams = array_merge($params, array(
-                    AbstractFormComponent::COMPONENT_NAME => self::PROFESSION,
-                    AbstractField::FIELD_ID => self::PROFESSION,
-                    AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
-                    AbstractField::FIELD_CLASS => '',
-                    AbstractField::FIELD_VALUE => htmlspecialchars($value),
-                    AbstractField::FIELD_ATTRIBUTES => array(),
-                ));
-                return new Input($fieldParams);
-                break;
-            case self::POST_CODE :
-                $value = isset($params[AbstractField::FIELD_VALUE])
-                    ? $params[AbstractField::FIELD_VALUE]
-                    : '';
-                $fieldParams = array_merge($params, array(
-                    AbstractFormComponent::COMPONENT_NAME => self::POST_CODE,
-                    AbstractField::FIELD_ID => self::POST_CODE,
-                    AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
-                    AbstractField::FIELD_CLASS => '',
-                    AbstractField::FIELD_VALUE => htmlspecialchars($value),
-                    AbstractField::FIELD_ATTRIBUTES => array(),
-                ));
-                return new Input($fieldParams);
-                break;
-            case self::STREET :
-                $value = isset($params[AbstractField::FIELD_VALUE])
-                    ? $params[AbstractField::FIELD_VALUE]
-                    : '';
-                $fieldParams = array_merge($params, array(
-                    AbstractFormComponent::COMPONENT_NAME => self::STREET,
-                    AbstractField::FIELD_ID => self::STREET,
-                    AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
-                    AbstractField::FIELD_CLASS => '',
-                    AbstractField::FIELD_VALUE => htmlspecialchars($value),
-                    AbstractField::FIELD_ATTRIBUTES => array(),
-                ));
-                return new Input($fieldParams);
-                break;
-            case self::LOCATION :
-                $value = isset($params[AbstractField::FIELD_VALUE])
-                    ? $params[AbstractField::FIELD_VALUE]
-                    : '';
-                $fieldParams = array_merge($params, array(
-                    AbstractFormComponent::COMPONENT_NAME => self::LOCATION,
-                    AbstractField::FIELD_ID => self::LOCATION,
-                    AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
-                    AbstractField::FIELD_CLASS => '',
-                    AbstractField::FIELD_VALUE => htmlspecialchars($value),
-                    AbstractField::FIELD_ATTRIBUTES => array(),
-                ));
-                return new Input($fieldParams);
-                break;
-            case self::HOUSE_NUMBER :
-                $value = isset($params[AbstractField::FIELD_VALUE])
-                    ? $params[AbstractField::FIELD_VALUE]
-                    : '';
-                $fieldParams = array_merge($params, array(
-                    AbstractFormComponent::COMPONENT_NAME => self::HOUSE_NUMBER,
-                    AbstractField::FIELD_ID => self::HOUSE_NUMBER,
-                    AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
-                    AbstractField::FIELD_CLASS => '',
-                    AbstractField::FIELD_VALUE => htmlspecialchars($value),
-                    AbstractField::FIELD_ATTRIBUTES => array(),
-                ));
-                return new Input($fieldParams);
-                break;
-            case self::QUANTITY:
-                $value = isset($params[AbstractField::FIELD_VALUE])
-                    ? $params[AbstractField::FIELD_VALUE]
-                    : '';
-                $fieldParams = array_merge($params, array(
-                    AbstractFormComponent::COMPONENT_NAME => self::QUANTITY,
-                    AbstractField::FIELD_ID => self::QUANTITY,
-                    AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
-                    AbstractField::FIELD_CLASS => '',
-                    AbstractField::FIELD_VALUE => htmlspecialchars($value),
-                    AbstractField::FIELD_ATTRIBUTES => array(),
-                ));
-                return new Input($fieldParams);
+            case (in_array($fieldName, [
+                self::FIRST_NAME,
+                self::LAST_NAME,
+                self::PHONE,
+                self::EMAIL,
+                self::PROFESSION,
+                self::POST_CODE,
+                self::STREET,
+                self::LOCATION,
+                self::HOUSE_NUMBER,
+                self::QUANTITY,
+                self::CITY,
+                self::SEX
+            ])):
+                return $this->getStandardInput($params, $fieldName);
                 break;
             case self::COUNTRY:
                 $params = $this->checkSelectOptions($params);
@@ -388,5 +269,26 @@ class CheckoutForm extends AbstractFrom
             throw new \Exception('Options not specified');
         }
         return $params;
+    }
+
+    /**
+     * @param array $params
+     * @param $name
+     * @return Input
+     */
+    protected function getStandardInput(array $params, $name)
+    {
+        $value = isset($params[AbstractField::FIELD_VALUE])
+            ? $params[AbstractField::FIELD_VALUE]
+            : '';
+        $fieldParams = array_merge($params, array(
+            AbstractFormComponent::COMPONENT_NAME => $name,
+            AbstractField::FIELD_ID => $name,
+            AbstractField::FIELD_TYPE => Input::TEXT_TYPE,
+            AbstractField::FIELD_CLASS => '',
+            AbstractField::FIELD_VALUE => htmlspecialchars($value),
+            AbstractField::FIELD_ATTRIBUTES => array(),
+        ));
+        return new Input($fieldParams);
     }
 }

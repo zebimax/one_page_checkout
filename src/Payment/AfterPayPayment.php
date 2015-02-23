@@ -9,30 +9,72 @@
 namespace Payment;
 
 
+use Application\Interfaces\PaymentOrdersInfoModelAwareInterface;
 use Form\CheckoutForm;
 use Form\Component\Field\Input;
 use Form\Component\Text\Label;
 use Form\Component\TextComponent;
 use Form\Validators\CallableValidationValidator;
 use Form\ValidatorsConfigurableInterface;
+use Model\PaymentOrderInfo;
 use Payment\Api\Afterpay;
 use Payment\Interfaces\ActivatableValidatorsInterface;
+use Payment\Interfaces\CurrentPaymentTransactionInfoInterface;
+use Payment\Traits\CurrentPaymentTransactionInfoTrait;
 use Payment\Traits\ValidatorsConfigurableTrait;
 
 class AfterPayPayment extends AbstractPaymentMethod
     implements ValidatorsConfigurableInterface,
-    ActivatableValidatorsInterface
+    ActivatableValidatorsInterface,
+    CurrentPaymentTransactionInfoInterface,
+    PaymentOrdersInfoModelAwareInterface
 {
     use ValidatorsConfigurableTrait;
+    use CurrentPaymentTransactionInfoTrait;
+
+    const SUCCESS_STATUS_CODE = 'A';
+    const AFTER_PAY = 'afterpay';
+
     private $sharedComponents = [];
     protected $api;
+    private $currency = 'EUR';
+    /** @var PaymentOrderInfo */
+    protected $paymentOrdersInfoModel;
 
-    public function __construct(AfterPay $api)
+    public function __construct(AfterPay $api, array $options = [])
     {
         $this->code = 'afterpay';
         $this->api = $api;
+        if (isset($options['currency'])) {
+            $this->currency = $options['currency'];
+        }
     }
 
+    /**
+     * @return PaymentOrderInfo
+     * @throws \Exception
+     */
+    public function getPaymentOrdersInfoModel()
+    {
+         if (!$this->paymentOrdersInfoModel) {
+             throw new \Exception('payment order info model must be set before!');
+         }
+        return $this->paymentOrdersInfoModel;
+    }
+
+    /**
+     * @param PaymentOrderInfo $paymentOrdersInfoModel
+     * @return $this
+     */
+    public function setPaymentOrdersInfoModel(PaymentOrderInfo $paymentOrdersInfoModel)
+    {
+        $this->paymentOrdersInfoModel = $paymentOrdersInfoModel;
+        return $this;
+    }
+
+    /**
+     * @param CheckoutForm $checkoutForm
+     */
     public function addOwnFieldsToCheckoutForm(CheckoutForm $checkoutForm)
     {
         $checkoutForm->addCustomField('afterpay', function() {
@@ -49,71 +91,117 @@ class AfterPayPayment extends AbstractPaymentMethod
         });
     }
 
+    /**
+     * @param $paymentOrderId
+     * @return bool
+     * @throws \Exception
+     */
     public function checkSuccessOrder($paymentOrderId)
     {
-        return true;
+        $paymentInfo = $this->getPaymentOrdersInfoModel()->getPaymentInfo($paymentOrderId);
+        return isset($paymentInfo['statusCode']) && $paymentInfo['statusCode'] == self::SUCCESS_STATUS_CODE;
     }
 
+    /**
+     * @param $orderId
+     * @param array $data
+     * @return bool
+     */
     public function process($orderId, array $data)
     {
-        $this->transactionInfo = ['order_id' => $orderId, 'payment_order_id' => 'sfasf'];
-        return true;
-        $sku = 'PRODUCT1';
-        $name = 'Product name 1';
-        $qty = 3;
-        $price = 3000; // in cents
-        $tax_category = 1; // 1 = high, 2 = low, 3, zero, 4 no tax
-        $this->api->create_order_line( $sku, $name, $qty, $price, $tax_category );
-        // Set up the bill to address
-        $aporder['billtoaddress']['city'] = 'Heerenveen';
-        $aporder['billtoaddress']['housenumber'] = '90';
-        $aporder['billtoaddress']['isocountrycode'] = 'NL';
-        $aporder['billtoaddress']['postalcode'] = '8441ER';
-        $aporder['billtoaddress']['referenceperson']['dob'] = '1980-12-12T00:00:00';
-        $aporder['billtoaddress']['referenceperson']['email'] = 'test@afterpay.nl';
-        $aporder['billtoaddress']['referenceperson']['gender'] = 'M';
-        $aporder['billtoaddress']['referenceperson']['initials'] = 'A';
-        $aporder['billtoaddress']['referenceperson']['isolanguage'] = 'NL';
-        $aporder['billtoaddress']['referenceperson']['lastname'] = 'de Tester';
-        $aporder['billtoaddress']['referenceperson']['phonenumber'] = '0513744112';
-        $aporder['billtoaddress']['streetname'] =  'KR Poststraat';
+        $this->api->createOrderLine(
+            $data['product_id'],
+            $data['product_name'],
+            $data['quantity'],
+            $data['product_price_in_cents'],
+            $data['product_tax_category']
+        );
+        $data = array_merge($data, $this->makeAdditionalInfo($data));
+        $order['billtoaddress']['city'] = $data['city'];
+        $order['billtoaddress']['housenumber'] = $data['house_number'];
+        $order['billtoaddress']['isocountrycode'] = $data['country'];
+        $order['billtoaddress']['postalcode'] = $data['post_code'];
+        $order['billtoaddress']['referenceperson']['dob'] = $data['dob'];
+        $order['billtoaddress']['referenceperson']['email'] = $data['email'];
+        $order['billtoaddress']['referenceperson']['gender'] = $data['sex'];//MV
+        $order['billtoaddress']['referenceperson']['initials'] = $data['initials'];//'A';
+        $order['billtoaddress']['referenceperson']['isolanguage'] = $data['country_language'];
+        $order['billtoaddress']['referenceperson']['lastname'] = $data['last_name'];
+        $order['billtoaddress']['referenceperson']['phonenumber'] = $data['phone'];
+        $order['billtoaddress']['phonenumber1'] = $data['phone'];
+        $order['billtoaddress']['streetname'] =  $data['street_name'];
 
-// Set up the ship to address
-        $aporder['shiptoaddress']['city'] = 'Heerenveen';
-        $aporder['shiptoaddress']['housenumber'] = '90';
-        $aporder['shiptoaddress']['isocountrycode'] = 'NL';
-        $aporder['shiptoaddress']['postalcode'] = '8441ER';
-        $aporder['shiptoaddress']['referenceperson']['dob'] = '1980-12-12T00:00:00';
-        $aporder['shiptoaddress']['referenceperson']['email'] = 'test@afterpay.nl';
-        $aporder['shiptoaddress']['referenceperson']['gender'] = 'M';
-        $aporder['shiptoaddress']['referenceperson']['initials'] = 'A';
-        $aporder['shiptoaddress']['referenceperson']['isolanguage'] = 'NL';
-        $aporder['shiptoaddress']['referenceperson']['lastname'] = 'de Tester';
-        $aporder['shiptoaddress']['referenceperson']['phonenumber'] = '0513744112';
-        $aporder['shiptoaddress']['streetname'] =  'KR Poststraat';
+        $order['shiptoaddress']['city'] = $data['ship_city'];
+        $order['shiptoaddress']['housenumber'] = $data['ship_house_number'];
+        $order['shiptoaddress']['isocountrycode'] = $data['ship_country_code'];
+        $order['shiptoaddress']['postalcode'] = $data['ship_post_code'];
+        $order['shiptoaddress']['referenceperson']['dob'] = $data['ship_dob'];
+        $order['shiptoaddress']['referenceperson']['email'] = $data['ship_email'];
+        $order['shiptoaddress']['referenceperson']['gender'] = $data['ship_sex'];;
+        $order['shiptoaddress']['referenceperson']['initials'] = $data['ship_initials'];
+        $order['shiptoaddress']['referenceperson']['isolanguage'] = $data['ship_language'];
+        $order['shiptoaddress']['referenceperson']['lastname'] = $data['ship_last_name'];
+        $order['shiptoaddress']['referenceperson']['phonenumber'] = $data['ship_phone'];
+        $order['shiptoaddress']['streetname'] =  $data['ship_street_name'];
 
-// Set up the additional information
-        $aporder['ordernumber'] = 'ORDER123';
-        $aporder['bankaccountnumber'] = '12345'; // or IBAN 'NL32INGB0000012345';
-        $aporder['currency'] = 'EUR';
-        $aporder['ipaddress'] = $_SERVER['REMOTE_ADDR'];
-
-// Create the order object for B2C or B2B
-        $this->api->set_order($aporder, 'B2C');
-        $authorisation['merchantid'] = '137393105';
-        $authorisation['portfolioid'] = '9';
-        $authorisation['password'] = 'f31f4a4417';
-        $modus = 'test'; // or 'live' for production
-        $this->api->do_request($authorisation, $modus);
+        $order['ordernumber'] = 'ORDER_' . $orderId;
+        $order['bankaccountnumber'] = $data['bank_account_number'];
+        $order['currency'] = $data['currency'];
+        $order['ipaddress'] = $data['ip_address'];
+        $this->api->setOrder($order, 'B2C');
+        $this->api->doRequest();
+        $orderResult = $this->api->getOrderResult();
+        if (isset($orderResult->return->statusCode) && $orderResult->return->statusCode == self::SUCCESS_STATUS_CODE) {
+            $this->transactionInfo = [
+                'order_id' => $orderId,
+                'payment_order_id' => $orderResult->return->afterPayOrderReference
+            ];
+            $this->currentPaymentTransactionInfo = (array)$orderResult->return;
+            return true;
+        } elseif (isset($orderResult->return->rejectDescription)) {
+            $this->transactionErrors[] = $orderResult->return->rejectDescription;
+        }
+        return false;
     }
 
     /**
      * @param array $data
      * @return array
      */
-    public function extractPaymentInfo(array $data)
+    private function makeAdditionalInfo(array $data)
     {
-        return [];
+        $dob = \DateTime::createFromFormat(
+            'Y-m-d',
+            "{$data['afterpay']['year_of_birth']}-{$data['afterpay']['month_of_birth']}-{$data['afterpay']['day_of_birth']}"
+        )->format('c');
+
+        $country = $data['country'];
+        $postCode = strtoupper($data['post_code']);
+        $sex = (strtolower($data['sex']) == 'w') ? 'V' : 'M';
+        $initials = strtoupper($data['first_name']{0});
+        return [
+            'post_code' => $postCode,
+            'dob' => $dob,
+            'sex' => $sex,
+            'initials' => $initials,
+            'country_language' => $country,
+            'street_name' => $data['street'],
+            'ship_city' => $data['city'],
+            'ship_house_number' => $data['house_number'],
+            'ship_country_code' => $country,
+            'ship_post_code' => $postCode,
+            'ship_dob' => $dob,
+            'ship_email' => $data['email'],
+            'ship_sex' => $sex,
+            'ship_initials' => $initials,
+            'ship_language' => $country,
+            'ship_last_name' => $data['last_name'],
+            'ship_phone' => $data['phone'],
+            'ship_street_name' => $data['street'],
+            'bank_account_number' => '12345',// or IBAN 'NL32INGB0000012345';
+            'currency' => $this->currency,
+            'ip_address' => $_SERVER['REMOTE_ADDR']
+        ];
     }
 
     /**
@@ -130,7 +218,14 @@ class AfterPayPayment extends AbstractPaymentMethod
      */
     public function getOrderInfo($orderId)
     {
-        return [];
+        $paymentInfo = $this->getPaymentOrdersInfoModel()->getPaymentInfo($orderId);
+        if (empty($paymentInfo)) {
+            return false;
+        }
+        $dateTime = new \DateTime();
+        $dateTime->setTimestamp(round($paymentInfo['timestampOut']/1000));
+        $paymentInfo['created'] = $dateTime->format('c');
+        return $paymentInfo;
     }
 
     public function activateValidators()
