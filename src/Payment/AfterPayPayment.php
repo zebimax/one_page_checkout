@@ -160,6 +160,12 @@ class AfterPayPayment extends AbstractPaymentMethod
             return true;
         } elseif (isset($orderResult->return->rejectDescription)) {
             $this->transactionErrors[] = $orderResult->return->rejectDescription;
+        } elseif(isset($orderResult->return->failures)) {
+            foreach ((array)$orderResult->return->failures as $failure) {
+                $this->transactionErrors[] = $failure->suggestedvalue;
+            }
+        } else {
+            $this->transactionErrors[] = 'Unknown error(AfterPay)';
         }
         return false;
     }

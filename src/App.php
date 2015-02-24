@@ -30,6 +30,7 @@ class App
     private $db;
     private $paymentOrderInfoModel;
     private $saver;
+    private $orders;
 
     /**
      * @param ConfigInterface $configInterface
@@ -43,12 +44,8 @@ class App
 
     public function index()
     {
-        $checkoutForm = new CheckoutForm($this->getCheckoutFormOptions());
-        $checkoutForm->setPaymentMethods($this->getPaymentMethods());
-
-        $this->data = [
-            'checkoutForm' => $checkoutForm->make(),
-        ];
+        $checkoutForm = $this->createCheckoutForm();
+        $this->data['checkoutForm'] = $checkoutForm->make();
     }
 
     public function test()
@@ -62,30 +59,20 @@ class App
      */
     public function success($paymentOrderId)
     {
-        $view = 'error';
-        $this->data['errors'] = 'Order is invalid';
         $paymentOrderInfo = $this->getPaymentOrdersInfoModel();
-        $paymentCode = $paymentOrderInfo->getPaymentByPaymentOrderId($paymentOrderId);
-        if ($paymentCode) {
-            /** @var AbstractPaymentMethod $paymentMethod */
-            $paymentMethod = $this->getPaymentMethod($paymentCode);
-            if ($paymentMethod instanceof PaymentOrdersInfoModelAwareInterface) {
-                $paymentMethod->setPaymentOrdersInfoModel($this->getPaymentOrdersInfoModel());
-            }
-            if ($paymentMethod && $paymentMethod->checkSuccessOrder($paymentOrderId)) {
-                $updateStatus = $paymentOrderInfo
-                    ->updateStatusByPaymentOrderId($paymentOrderId, PaymentOrderInfo::STATUS_SUCCESS);
-                if ($updateStatus == PaymentOrderInfo::STATUS_SUCCESS) {
-                    $view = 'success';
-                    $this->data['successMessage'] = 'Success payment: order_id ' . $paymentOrderId;
-                    $this->saveOrder($paymentMethod, $paymentOrderId);
-                }
-            }
+        /** @var AbstractPaymentMethod $paymentMethod */
+        $paymentMethod = $this->getPaymentMethod(
+            $paymentOrderInfo->getPaymentByPaymentOrderId($paymentOrderId)
+        );
+        if ($paymentMethod instanceof PaymentOrdersInfoModelAwareInterface) {
+            $paymentMethod->setPaymentOrdersInfoModel($paymentOrderInfo);
         }
-        if ($view == 'error') {
+        if (!$this->checkSuccessOrder($paymentMethod, $paymentOrderId)) {
+            $this->data['errors'][] = 'Order is invalid';
             $this->index();
+            return false;
         }
-        return $view;
+        return true;
     }
 
     /**
@@ -94,46 +81,36 @@ class App
      */
     public function checkout(array $data)
     {
-        $checkoutForm = new CheckoutForm($this->getCheckoutFormOptions());
-        $checkoutForm
-            ->setPaymentMethods($this->getPaymentMethods())
+        $result = false;
+        $checkoutForm = $this->createCheckoutForm()
             ->setValidators($this->getCheckoutFormValidators())
             ->setData(new FormData($data));
+
         if (($paymentMethod = $checkoutForm->selectPaymentMethod()) === false || !$checkoutForm->isValid()) {
-            $this->data = [
-                'errors' => $checkoutForm->getValidationErrors(),
-            ];
-            $view = 'error';
+            $this->data['errors'] = $checkoutForm->getValidationErrors();
         } else {
             $formData = $checkoutForm->getData()->getData();
             $paymentData = $paymentMethod->extractPaymentInfo($formData);
             $paymentData['total'] = $this->calculateTotal($checkoutForm->getQuantity());
             $orderId = $this->makeOrder($data, $paymentData);
-            $view = 'error';
-            $this->data = [
-                'errors' => ['Can not create order']
-            ];
-            $processData = array_merge(
-                $data,
-                [
-                    'product_tax_category' => $this->config->get('product_tax_category'),
-                    'product_price_in_cents' => $this->config->get('product_price_in_cents'),
-                    'product_id' => PRODUCT_ID,
-                    'product_name' => PRODUCT_NAME
-                ],
-                $paymentData
-            );
-            if ($orderId && $paymentMethod->process($orderId, $processData)) {
+
+            if (
+            $paymentMethod->process(
+                $orderId,
+                array_merge($data, $paymentData, $this->getAdditionalData())
+            )
+            ) {
                 $transactionInfo = $paymentMethod->getTransactionInfo();
                 $currentTransactionInfo = $paymentMethod instanceof CurrentPaymentTransactionInfoInterface
                     ? $paymentMethod->getCurrentPaymentTransactionInfo()
                     : [];
+
                 if (
-                    !$this->setPaymentOrder(
-                        $transactionInfo['order_id'],
-                        $transactionInfo['payment_order_id'],
-                        $currentTransactionInfo
-                    )
+                !$this->setPaymentOrder(
+                    $transactionInfo['order_id'],
+                    $transactionInfo['payment_order_id'],
+                    $currentTransactionInfo
+                )
                 ) {
                     $this->data['errors'] = ['Can not update order'];
                 } else {
@@ -141,16 +118,17 @@ class App
                         header('location:' . $paymentMethod->returnRedirectUrl());
                     } else {
                         $this->setSaver(new XMLSaver(APP_DIR . 'xml' . DIRECTORY_SEPARATOR));
-                        $view = $this->success($transactionInfo['payment_order_id']);
+                        return $this->success($transactionInfo['payment_order_id']);
                     }
                 }
+            } else {
+                $this->data['errors'] = $paymentMethod->getTransactionErrors();
             }
         }
-        if ($view == 'error') {
-            $this->data['errors'] = array_merge($paymentMethod->getTransactionErrors(), (array)$this->data['errors']);
+        if (!$result) {
             $this->data['checkoutForm'] = $checkoutForm->make();
         }
-        return $view;
+        return $result;
     }
 
     /**
@@ -163,6 +141,13 @@ class App
         return $this;
     }
 
+    /**
+     * @param $title
+     */
+    public function setTitle($title)
+    {
+        $this->data['title'] = $title;
+    }
     /**
      * @param $view
      * @return $this
@@ -279,9 +264,7 @@ class App
      */
     private function makeOrder(array $orderData, array $paymentData)
     {
-        /** @var Orders $ordersModel*/
-        $ordersModel = new Orders($this->db, Model::ORDERS_TABLE);
-        return $ordersModel->makeOrder($orderData, $paymentData);
+        return $this->getOrders()->makeOrder($orderData, $paymentData);
     }
 
     /**
@@ -499,5 +482,72 @@ class App
     private function getRawTotalInclTax()
     {
         return $this->getRawTotal() * (1 + $this->getTaxPercent() / 100);
+    }
+
+    /**
+     * @return CheckoutForm
+     */
+    private function createCheckoutForm()
+    {
+        $checkoutForm = new CheckoutForm($this->getCheckoutFormOptions());
+        $checkoutForm->setAction('/')->setPaymentMethods($this->getPaymentMethods());
+        return $checkoutForm;
+    }
+
+    /**
+     * @return Orders
+     */
+    public function getOrders()
+    {
+        if (!$this->orders) {
+            $this->orders = new Orders($this->db, Model::ORDERS_TABLE);
+        }
+        return $this->orders;
+    }
+
+    /**
+     * @return array
+     */
+    protected function getAdditionalData()
+    {
+        $paymentData = [
+            'product_tax_category' => $this->config->get('product_tax_category'),
+            'product_price_in_cents' => $this->config->get('product_price_in_cents'),
+            'product_id' => PRODUCT_ID,
+            'product_name' => PRODUCT_NAME
+        ];
+        return $paymentData;
+    }
+
+    /**
+     * @param $paymentMethod
+     * @param $paymentOrderId
+     * @return bool
+     * @throws Exception
+     */
+    private function checkSuccessOrder($paymentMethod, $paymentOrderId)
+    {
+        $paymentOrderInfo = $this->getPaymentOrdersInfoModel();
+
+        if (
+            !$paymentMethod instanceof AbstractPaymentMethod ||
+            $paymentOrderInfo->getStatus($paymentOrderId) != PaymentOrderInfo::STATUS_ACCEPTED
+        ) {
+            return false;
+        }
+
+        if ($paymentMethod->checkSuccessOrder($paymentOrderId)) {
+            $updateStatus = $paymentOrderInfo->updateStatusByPaymentOrderId(
+                $paymentOrderId,
+                PaymentOrderInfo::STATUS_SUCCESS
+            );
+            if ($updateStatus == PaymentOrderInfo::STATUS_SUCCESS) {
+                $this->data['successMessage'] = 'Success payment: order_id ' . $paymentOrderId;
+                $this->saveOrder($paymentMethod, $paymentOrderId);
+                $this->setTitle('Success page');
+                return true;
+            }
+        }
+        return false;
     }
 }

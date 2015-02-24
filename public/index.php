@@ -28,21 +28,23 @@ $app = new App(
     MysqlDb::getInstance($config->get('mysql'))
 );
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$app->setTitle('Main page');
+$result = false;
 switch (true) {
     case ($uri == '/success' && isset($_GET['order_id'])):
         $app->setSaver(new XMLSaver(APP_DIR . 'xml' . DIRECTORY_SEPARATOR));
-        $view = VIEW_APP_DIR . $app->success($_GET['order_id']) . '.phtml';
+        $result = $app->success($_GET['order_id']);
         break;
     case ($uri == '/test'):
         $app->test();
         break;
     case (isset($_POST['checkout']) && $_POST['checkout']) :
-        $view = VIEW_APP_DIR . $app->checkout($_POST) . '.phtml';
+        $result = $app->checkout($_POST);
         break;
     default:
-        $view = VIEW_APP_DIR . 'index.phtml';
-        $app->index(VIEW_APP_DIR . 'index.phtml');
+        $app->index();
         break;
 }
+$view = $result ? VIEW_APP_DIR . 'success.phtml' : VIEW_APP_DIR . 'index.phtml';
 
 $app->setView($view)->render(APP_DIR . 'layout.phtml');

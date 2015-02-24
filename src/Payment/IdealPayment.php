@@ -95,8 +95,7 @@ class IdealPayment extends AbstractPaymentMethod
     {
         if(isset($data['ideal']['banks'])) {
             return [
-                'issuer_id' => $data['ideal']['banks'],
-                'total' => isset($data['total']) ? $data['total'] : 0
+                'issuer_id' => $data['ideal']['banks']
             ];
         }
         return [];

@@ -62,11 +62,13 @@ abstract class AbstractFrom
     }
 
     /**
-     * @param string $action
+     * @param $action
+     * @return $this
      */
     public function setAction($action)
     {
         $this->action = $action;
+        return $this;
     }
 
     /**

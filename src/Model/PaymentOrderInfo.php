@@ -161,6 +161,17 @@ class PaymentOrderInfo extends Model
         return (!empty($row['data']))
             ? (array)json_decode($row['data'], JSON_OBJECT_AS_ARRAY)
             : [];
+    }
 
+    public function getStatus($paymentOrderId)
+    {
+        $row = $this->tableSelect(
+            ['status'],
+            [],
+            [sprintf('payment_order_id = "%s"', $this->escape($paymentOrderId))],
+            ['LIMIT 1'],
+            true
+        );
+        return isset($row['status']) ? $row['status'] : false;
     }
 }

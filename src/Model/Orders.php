@@ -46,8 +46,9 @@ class Orders extends Model
                       street,
                       location,
                       quantity,
-                      country_id
-                      ) VALUES (%d, "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", %d, %d)',
+                      country_id,
+                      total
+                      ) VALUES (%d, "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", %d, %d, %s)',
             self::ORDER_INFO_TABLE,
             $orderId,
             $this->escape($data['first_name']),
@@ -60,7 +61,8 @@ class Orders extends Model
             $this->escape($data['street']),
             $this->escape($data['location']),
             $data['quantity'],
-            $this->getCountryIdByCode($data['country'])
+            $this->getCountryIdByCode($data['country']),
+            round($paymentData['total'], 4)
         ));
         if ($error = $this->db->getConnection()->error) {
             $this->rollback();
