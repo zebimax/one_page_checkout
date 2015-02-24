@@ -23,8 +23,9 @@ class AfterPay
      * @param $merchantId
      * @param $portfolio
      * @param $password
+     * @param $mode
      */
-    public function __construct($merchantId, $portfolio, $password)
+    public function __construct($merchantId, $portfolio, $password, $mode)
     {
         $this->order = new \stdClass();
         $this->order->shopper = new \stdClass();
@@ -32,6 +33,7 @@ class AfterPay
         $this->authorization->merchantId = $merchantId;
         $this->authorization->portfolioId = $portfolio;
         $this->authorization->password = $password;
+        $this->mode = $mode;
     }
 
     /**
@@ -171,7 +173,7 @@ class AfterPay
             }
         }
         $this->order->ordernumber = $order['ordernumber'];
-        $this->order->bankaccountNumber = $order['bankaccountnumber'];
+//        $this->order->bankaccountNumber = $order['bankaccountnumber'];
         $this->order->currency = $order['currency'];
         $this->order->ipAddress = $order['ipaddress'];
         $this->order->shopper->profilecreated = '2013-01-01T00:00:00';
@@ -204,8 +206,9 @@ class AfterPay
      * @throws \Exception
      * Process request to SOAP webservice
      */
-    public function doRequest($mode = 'test')
+    public function doRequest($mode = false)
     {
+        $mode = $mode ? $mode : $this->mode;
         $this->setMode($mode);
         $this->setSoapClient();
         try {

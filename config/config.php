@@ -13,18 +13,19 @@ use Payment\IdealPayment;
 error_reporting(E_ALL);
 ini_set('display_errors', true);
 return [
+    'product_id' => 'product_id',
+    'product_ean' => 'product_ean', // EAN code,
+    'product_name' => 'supradyn vitamine gummies',
     'product_price' => 10,
     'product_price_in_cents' => 1000,
     'product_tax_percent' => 6,
     'product_tax_category' => 1, // 1 = high, 2 = low, 3, zero, 4 no tax
     'product_raw_total' => 1000000,
-    'secret_success_key' => 123,
     'ginger_api_key' => '64c0b3be0b8d4c23b44140a3a8b5234b',
-    'afterpay_api_url' => 'https://www.acceptgirodienst.nl/services/interface/?wsdl',
     'afterpay_merchant_id' => 300005635,
     'afterpay_portofolio' => 18,
     'afterpay_password' => '5ad729393a',
-
+    'afterpay_mode' => 'test',
     'mysql' => [
         'host' => 'localhost',
         'port' => 3601,
@@ -82,7 +83,8 @@ return [
             return new AfterPayPayment(new AfterPay(
                 $configInterface->get('afterpay_merchant_id'),
                 $configInterface->get('afterpay_portofolio'),
-                $configInterface->get('afterpay_password')
+                $configInterface->get('afterpay_password'),
+                $configInterface->get('afterpay_mode')
             ));
         }
     ],

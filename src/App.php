@@ -422,9 +422,9 @@ class App
                                             'elements' => [
                                                 'item' => [
                                                     'elements' => [
-                                                        'products_name' => ['text' => PRODUCT_NAME],
+                                                        'products_name' => ['text' => $this->config->get('product_name')],
                                                         'quantity' => ['text' => $data['quantity']],
-                                                        'ean_code' => ['text' => PRODUCT_EAN],
+                                                        'ean_code' => ['text' => $this->config->get('product_ean')],
                                                         'price' => ['text' => $this->getPrice()],
                                                         'price_incl_tax' => ['text' => $this->getPriceInclTax()],
                                                         'tax_percent' => ['text' => $this->getTaxPercent()],
@@ -513,8 +513,8 @@ class App
         $paymentData = [
             'product_tax_category' => $this->config->get('product_tax_category'),
             'product_price_in_cents' => $this->config->get('product_price_in_cents'),
-            'product_id' => PRODUCT_ID,
-            'product_name' => PRODUCT_NAME
+            'product_id' => $this->config->get('product_id'),
+            'product_name' => $this->config->get('product_name')
         ];
         return $paymentData;
     }

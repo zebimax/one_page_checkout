@@ -63,14 +63,12 @@ abstract class AbstractPaymentMethod implements PaymentMethodInterface
     protected function getPaymentDescription(array $data)
     {
         return sprintf(
-            '%s payment from %s for %s %s, email: %s of % product, quantity: %s',
+            '%s payment from %s for %s %s, email: %s',
             $this->getCode(),
             PRODUCT_HOST,
             $data['first_name'],
             $data['last_name'],
-            $data['email'],
-            PRODUCT_NAME,
-            $data['quantity']
+            $data['email']
         );
     }
 

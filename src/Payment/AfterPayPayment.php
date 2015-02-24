@@ -145,7 +145,7 @@ class AfterPayPayment extends AbstractPaymentMethod
         $order['shiptoaddress']['streetname'] =  $data['ship_street_name'];
 
         $order['ordernumber'] = 'ORDER_' . $orderId;
-        $order['bankaccountnumber'] = $data['bank_account_number'];
+        //$order['bankaccountnumber'] = $data['bank_account_number'];//do not use it now
         $order['currency'] = $data['currency'];
         $order['ipaddress'] = $data['ip_address'];
         $this->api->setOrder($order, 'B2C');
@@ -204,7 +204,7 @@ class AfterPayPayment extends AbstractPaymentMethod
             'ship_last_name' => $data['last_name'],
             'ship_phone' => $data['phone'],
             'ship_street_name' => $data['street'],
-            'bank_account_number' => '12345',// or IBAN 'NL32INGB0000012345';
+            //'bank_account_number' => '12345',// or IBAN 'NL32INGB0000012345';
             'currency' => $this->currency,
             'ip_address' => $_SERVER['REMOTE_ADDR']
         ];
