@@ -80,6 +80,7 @@ class Orders extends Model
             return false;
         }
         $this->commit();
+        $this->db->endTransaction();
         return $orderId;
     }
 }

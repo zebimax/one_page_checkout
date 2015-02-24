@@ -124,12 +124,9 @@ class Model
         return $this->finishTransaction($success);
     }
 
-    /**
-     * @return bool
-     */
     protected function startTransaction()
     {
-        return $this->db->getConnection()->begin_transaction();
+        $this->db->startTransaction();
     }
 
     /**

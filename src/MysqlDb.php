@@ -136,4 +136,20 @@ class MysqlDb
         self::checkInstance();
         return self::$instance->getConnection()->real_escape_string($string);
     }
+
+    public function startTransaction()
+    {
+        if (version_compare(PHP_VERSION, '5.5.0', '>=')) {
+            $this->connection->begin_transaction();
+        } else {
+            $this->connection->autocommit(false);
+        }
+    }
+
+    public function endTransaction()
+    {
+        if (!version_compare(PHP_VERSION, '5.5.0', '>=')) {
+            $this->connection->autocommit(true);
+        }
+    }
 }

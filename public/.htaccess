@@ -1,3 +1,11 @@
+AuthType Basic
+AuthName "Restricted Files"
+# (Following line optional)
+AuthBasicProvider file
+AuthUserFile /var/www/dod-product/passwd
+Require user admin
+
+#/home/users/vitcvftp/vitamingummiesbestelpagina.nl
 DirectoryIndex indexp.php
 
 <IfModule mod_rewrite.c>

@@ -116,6 +116,7 @@ class AfterPayPayment extends AbstractPaymentMethod
             $data['product_price_in_cents'],
             $data['product_tax_category']
         );
+        $data['phone'] = preg_replace('/\D+/', '', $data['phone']);
         $data = array_merge($data, $this->makeAdditionalInfo($data));
         $order['billtoaddress']['city'] = $data['city'];
         $order['billtoaddress']['housenumber'] = $data['house_number'];
@@ -160,10 +161,16 @@ class AfterPayPayment extends AbstractPaymentMethod
             return true;
         } elseif (isset($orderResult->return->rejectDescription)) {
             $this->transactionErrors[] = $orderResult->return->rejectDescription;
-        } elseif(isset($orderResult->return->failures)) {
-            foreach ((array)$orderResult->return->failures as $failure) {
-                $this->transactionErrors[] = $failure->suggestedvalue;
+        } elseif (isset($orderResult->return->failures) && is_array($orderResult->return->failures)) {
+            foreach ($orderResult->return->failures as $failure) {
+                if (isset($failure->suggestedvalue)) {
+                    $this->transactionErrors[] = $failure->suggestedvalue;
+                }
             }
+        } elseif(isset($orderResult->return->failures->suggestedvalue)) {
+            $this->transactionErrors[] = $orderResult->return->failures->suggestedvalue ?
+                $orderResult->return->failures->suggestedvalue
+                : 'Unknown error(AfterPay)';
         } else {
             $this->transactionErrors[] = 'Unknown error(AfterPay)';
         }
@@ -263,7 +270,7 @@ class AfterPayPayment extends AbstractPaymentMethod
                     $value['year_of_birth'] > 1900 &&
                     $value['year_of_birth'] < 2100;
                 }
-            )
+            ),
         ];
     }
 

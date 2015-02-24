@@ -27,11 +27,11 @@ return [
     'afterpay_password' => '5ad729393a',
     'afterpay_mode' => 'test',
     'mysql' => [
-        'host' => 'localhost',
+        'host' => 'database35.c101.byte.nl',
         'port' => 3601,
-        'user' => 'root',
-        'password' => '',
-        'db' => 'product'
+        'user' => 'u069232_shop',
+        'password' => '6AJ!5Jf!0MEUDFwh',
+        'db' => 'db069232_shop'
     ],
     'checkout_form_options' => [
         ['name' => 'label', 'params' => ['labelFor' => 'first_name', 'text' => 'First Name']],
