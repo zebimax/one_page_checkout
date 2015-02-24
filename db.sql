@@ -2,7 +2,8 @@
 SQLyog Ultimate v11.52 (64 bit)
 MySQL - 5.5.40-0ubuntu0.14.04.1-log : Database - product
 *********************************************************************
-*/
+*/
+
 
 /*!40101 SET NAMES utf8 */;
 
@@ -50,6 +51,7 @@ CREATE TABLE `order_info` (
   `country_id` tinyint(3) unsigned NOT NULL,
   `company` varchar(255) DEFAULT NULL,
   `city` varchar(64) DEFAULT NULL,
+  `total` decimal(12,4) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
   KEY `country_id` (`country_id`),
