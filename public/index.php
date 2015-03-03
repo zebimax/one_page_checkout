@@ -9,7 +9,7 @@ use Application\Tools\XMLSaver;
 
 define('APP_DIR', dirname(__DIR__ . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
 define('VIEW_APP_DIR', APP_DIR . 'views' . DIRECTORY_SEPARATOR);
-define('PRODUCT_HOST', 'dod-product.local');
+define('PRODUCT_HOST', 'vitamingummiesbestelpagina.nl');
 
 $loader = require_once APP_DIR .'/vendor/autoload.php';
 
@@ -29,9 +29,6 @@ switch (true) {
     case ($uri == '/success' && isset($_GET['order_id'])):
         $app->setSaver(new XMLSaver(APP_DIR . 'xml' . DIRECTORY_SEPARATOR));
         $result = $app->success($_GET['order_id']);
-        break;
-    case ($uri == '/test'):
-        $app->test();
         break;
     case (isset($_POST['checkout']) && $_POST['checkout']) :
         $result = $app->checkout($_POST);

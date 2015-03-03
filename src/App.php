@@ -48,11 +48,6 @@ class App
         $this->data['checkoutForm'] = $checkoutForm->make();
     }
 
-    public function test()
-    {
-        $this->getPaymentMethod('afterpay')->process(123, []);
-    }
-
     /**
      * @param $paymentOrderId
      * @return string
@@ -148,6 +143,7 @@ class App
     {
         $this->data['title'] = $title;
     }
+
     /**
      * @param $view
      * @return $this
